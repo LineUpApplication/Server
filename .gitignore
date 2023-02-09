@@ -1,0 +1,8 @@
+node_modules/
+public/
+.env
+.DS_Store
+
+# This is a bug by the mongo jest package, accidentally generating a globalConfig
+# @source https://github.com/shelfio/jest-mongodb/issues/214
+src/globalConfig.json 
