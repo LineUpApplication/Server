@@ -22,17 +22,5 @@ const RestaurantSchema = new mongoose.Schema({
 export const Restaurant = mongoose.model("Restaurant", RestaurantSchema);
 
 Restaurant.watch().on("change", async (data) => {
-  try {
-    const restaurant = await Restaurant.findById(data.documentKey._id);
-    if (restaurant.waitlist.length > 1) {
-      const user = await User.findById(restaurant.waitlist[1].user);
-      sendText(user.phone, "You are almost there.")
-    }
-    if (restaurant.waitlist.length > 0) {
-      const user = await User.findById(restaurant.waitlist[0].user);
-      sendText(user.phone, "Your place in line is ready.")
-    } 
-  } catch (error) {
-    console.log(error);
-  }
+  // mongodb listener
 });

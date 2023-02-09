@@ -14,7 +14,7 @@ router.get("/getUserInfo", async (req, res) => {
     const name = req.query.name;
     const id = req.query.id;
     let user, partySize, place;
-    const restaurant = await Restaurant.findOne({ name: name })
+    const restaurant = await Restaurant.findOne({ name: name });
     for (let i = 0; i < restaurant.waitlist.length; i++) {
       let party = restaurant.waitlist[i];
       if (party.user.toString() == id) {
@@ -27,10 +27,10 @@ router.get("/getUserInfo", async (req, res) => {
       return res.status(200).send({
         user: user,
         partySize: partySize,
-        place: place
+        place: place,
       });
     } else {
-      return res.status(400).send("User not in waitlist.")
+      return res.status(400).send("User not in waitlist.");
     }
   } catch (error) {
     console.log(error);
@@ -131,6 +131,22 @@ router.post("/removeUser", async (req, res) => {
       .map((userInfo) => userInfo.user.toString())
       .indexOf(user._id.toString());
     if (index > -1) {
+      let user;
+      if (index == 1) {
+        if (restaurant.waitlist.length > 1) {
+          user = await User.findById(restaurant.waitlist[2].user);
+          sendText(user.phone, "You are almost there.");
+        }
+      } else if (index == 0) {
+        if (restaurant.waitlist.length > 1) {
+          user = await User.findById(restaurant.waitlist[1].user);
+          sendText(user.phone, "Your place in line is ready.");
+        }
+        if (restaurant.waitlist.length > 2) {
+          user = await User.findById(restaurant.waitlist[2].user);
+          sendText(user.phone, "You are almost there.");
+        }
+      }
       restaurant.waitlist.splice(index, 1)[0];
     } else {
       return res.status(400).send("User not in waitlist.");
@@ -149,16 +165,13 @@ router.get("/:name", async (req, res) => {
     if (name) {
       restaurant = await Restaurant.findOne({ name: name });
       restaurant = await Promise.all(
-        restaurant.waitlist.map(
-          async (userInfo) => {
-            const user = await User.findById(userInfo.user);
-            console.log(user)
-            return {
-              user: user,
-              partySize: userInfo.partySize
-            }
-          }
-        )
+        restaurant.waitlist.map(async (userInfo) => {
+          const user = await User.findById(userInfo.user);
+          return {
+            user: user,
+            partySize: userInfo.partySize,
+          };
+        })
       );
     } else {
       return res.status(400).send("No name provided");

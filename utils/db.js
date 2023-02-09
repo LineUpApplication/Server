@@ -1,9 +1,6 @@
 import mongoose from "mongoose";
-import debug from "debug";
 import dotenv from "dotenv";
 dotenv.config();
-
-const dbDebugger = debug("app:db");
 
 const connectDB = async () => {
   let db;
@@ -19,7 +16,6 @@ const connectDB = async () => {
     .connect(db)
     .then(() => {
       console.log("Connected to MongoDB...");
-      dbDebugger(`Connect to ${db}...`);
     })
     .catch((err) => console.log(err));
 };
