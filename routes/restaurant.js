@@ -4,6 +4,8 @@ import { User } from "../models/User.js";
 import { sendText } from "../utils/twilio.js";
 
 const router = express.Router();
+const ALMOST_MSG = "You are almost there.";
+const FRONT_MSG = "Your place in line is ready.";
 
 /********************************************************************
  *                        Restaurant Routes                         *
@@ -81,6 +83,12 @@ router.post("/addUser", async (req, res) => {
         user._id
       }`
     );
+    if (restaurant.waitlist.length == 2) {
+      sendText(phone, ALMOST_MSG);
+    }
+    if (restaurant.waitlist.length == 1) {
+      sendText(phone, FRONT_MSG);
+    }
     await restaurant.save();
     return res.status(200).send(restaurant);
   } catch (err) {
@@ -137,16 +145,16 @@ router.post("/removeUser", async (req, res) => {
       if (index == 1) {
         if (restaurant.waitlist.length > 1) {
           user = await User.findById(restaurant.waitlist[2].user);
-          sendText(user.phone, "You are almost there.");
+          sendText(user.phone, ALMOST_MSG);
         }
       } else if (index == 0) {
         if (restaurant.waitlist.length > 1) {
           user = await User.findById(restaurant.waitlist[1].user);
-          sendText(user.phone, "Your place in line is ready.");
+          sendText(user.phone, FRONT_MSG);
         }
         if (restaurant.waitlist.length > 2) {
           user = await User.findById(restaurant.waitlist[2].user);
-          sendText(user.phone, "You are almost there.");
+          sendText(user.phone, ALMOST_MSG);
         }
       }
       restaurant.waitlist.splice(index, 1)[0];
