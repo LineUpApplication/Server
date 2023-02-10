@@ -51,6 +51,7 @@ router.post("/addRestaurant", async (req, res) => {
     await restaurant.save();
     return res.status(200).send(restaurant);
   } catch (err) {
+    console.log("Failed to add restaurant: " + err);
     return res.status(400).send("Failed to add restaurant: " + err);
   }
 });
@@ -72,9 +73,10 @@ router.post("/addUser", async (req, res) => {
       .map((userInfo) => userInfo.user.toString())
       .indexOf(user._id.toString());
     if (index > -1) {
-      restaurant.waitlist.splice(index, 1)[0];
+      restaurant.waitlist[index] = { user: user, partySize: partySize };
+    } else {
+      restaurant.waitlist.push({ user: user._id, partySize: partySize });
     }
-    restaurant.waitlist.push({ user: user._id, partySize: partySize });
     sendText(
       "+1" + phone,
       `Hello, ${name}! This is a confirmation of your place in line for ${restaurantName}. The estimate wait time is now ${
@@ -92,7 +94,8 @@ router.post("/addUser", async (req, res) => {
     await restaurant.save();
     return res.status(200).send(restaurant);
   } catch (err) {
-    return res.status(400).send("Failed to create waitlist: " + err);
+    console.log("Failed to add user: " + err);
+    return res.status(400).send("Failed to add user: " + err);
   }
 });
 
@@ -121,29 +124,26 @@ router.post("/moveUser", async (req, res) => {
     await restaurant.save();
     return res.status(200).send(restaurant);
   } catch (err) {
-    return res.status(400).send("Failed to create waitlist: " + err);
+    console.log("Failed to move user: " + err);
+    return res.status(400).send("Failed to move user: " + err);
   }
 });
 
 router.post("/removeUser", async (req, res) => {
   try {
-    const { phone } = req.body.userInfo;
+    const { _id } = req.body.userInfo;
     const restaurantName = req.body.restaurant;
     let restaurant = await Restaurant.findOne({ name: restaurantName });
     if (!restaurant) {
       return res.status(400).send("Restaurant does not exists.");
     }
-    let user = await User.findOne({ phone: phone });
-    if (!user) {
-      return res.status(400).send("User does not exists.");
-    }
     const index = restaurant.waitlist
       .map((userInfo) => userInfo.user.toString())
-      .indexOf(user._id.toString());
+      .indexOf(_id.toString());
     if (index > -1) {
       let user;
       if (index == 1) {
-        if (restaurant.waitlist.length > 1) {
+        if (restaurant.waitlist.length > 2) {
           user = await User.findById(restaurant.waitlist[2].user);
           sendText(user.phone, ALMOST_MSG);
         }
@@ -164,7 +164,8 @@ router.post("/removeUser", async (req, res) => {
     await restaurant.save();
     return res.status(200).send(restaurant);
   } catch (err) {
-    return res.status(400).send("Failed to create waitlist: " + err);
+    console.log(err);
+    return res.status(400).send("Failed to remove user: " + err);
   }
 });
 
@@ -188,6 +189,7 @@ router.get("/:name", async (req, res) => {
     }
     return res.status(200).send(restaurant);
   } catch (err) {
+    console.log("Failed to get restaurant: " + err);
     return res.status(400).send("Failed to get restaurant: " + err);
   }
 });

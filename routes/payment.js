@@ -20,13 +20,12 @@ router.post("/charge", async (req, res) => {
 			payment_method: id,
 			confirm: true
 		})
-		console.log("Payment", payment)
 		res.json({
 			message: "Payment successful",
 			success: true
 		})
 	} catch (error) {
-		console.log("Error", error)
+		console.log("Payment error: ", error)
 		res.json({
 			message: "Payment failed",
 			success: false
