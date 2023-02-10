@@ -75,9 +75,11 @@ router.post("/addUser", async (req, res) => {
     restaurant.waitlist.push({ user: user._id, partySize: partySize });
     sendText(
       "+1" + phone,
-      `Hello, ${name}! This is a confirmation of your place in the line for ${restaurantName}. The estimate wait time is now ${
+      `Hello, ${name}! This is a confirmation of your place in line for ${restaurantName}. The estimate wait time is now ${
         restaurant.waitlist.length * 5
-      } minute/s...`
+      } minute/s..., check the updated estimated wait time on https://line-up-usersite.herokuapp.com/${
+        user._id
+      }`
     );
     await restaurant.save();
     return res.status(200).send(restaurant);
