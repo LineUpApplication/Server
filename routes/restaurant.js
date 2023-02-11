@@ -171,13 +171,14 @@ router.post("/removeUser", async (req, res) => {
 
 router.post("/notifyUser", async (req, res) => {
   try {
-    const { id } = req.body.userInfo;
+    const { _id } = req.body.userInfo;
     const restaurantName = req.body.restaurant;
     let restaurant = await Restaurant.findOne({ name: restaurantName });
     if (!restaurant) {
       return res.status(400).send("Restaurant does not exists.");
     }
-    let user = await User.findById(id);
+    let user = await User.findById(_id);
+    console.log(_id)
     if (!user) {
       return res.status(400).send("User does not exists.");
     }
