@@ -178,7 +178,6 @@ router.post("/notifyUser", async (req, res) => {
       return res.status(400).send("Restaurant does not exists.");
     }
     let user = await User.findById(_id);
-    console.log(_id)
     if (!user) {
       return res.status(400).send("User does not exists.");
     }
