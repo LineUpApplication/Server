@@ -169,6 +169,33 @@ router.post("/removeUser", async (req, res) => {
   }
 });
 
+router.post("/notifyUser", async (req, res) => {
+  try {
+    const { id } = req.body.userInfo;
+    const restaurantName = req.body.restaurant;
+    let restaurant = await Restaurant.findOne({ name: restaurantName });
+    if (!restaurant) {
+      return res.status(400).send("Restaurant does not exists.");
+    }
+    let user = await User.findById(id);
+    if (!user) {
+      return res.status(400).send("User does not exists.");
+    }
+    const index = restaurant.waitlist
+      .map((userInfo) => userInfo.user.toString())
+      .indexOf(user._id.toString());
+    if (index > -1) {
+      await sendText(user.phone, ALMOST_MSG);
+    } else {
+      return res.status(400).send("User not in waitlist.");
+    }
+    return res.status(200);
+  } catch (err) {
+    console.log("Failed to move user: " + err);
+    return res.status(400).send("Failed to move user: " + err);
+  }
+});
+
 router.get("/:name", async (req, res) => {
   try {
     const name = req.params.name;
