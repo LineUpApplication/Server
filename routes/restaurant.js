@@ -4,8 +4,8 @@ import { User } from "../models/User.js";
 import { sendText } from "../utils/twilio.js";
 
 const router = express.Router();
-const ALMOST_MSG = "You are almost there.";
-const FRONT_MSG = "Your place in line is ready.";
+const ALMOST_MSG = `Your table is almost ready at ${restaurantName}. Please return to the restaurant so the host can seat you soon`;
+const FRONT_MSG = `Your table is ready at ${restaurantName}. Please checkin with the host so we can seat you as soon as possible`;
 
 /********************************************************************
  *                        Restaurant Routes                         *
@@ -79,9 +79,7 @@ router.post("/addUser", async (req, res) => {
     }
     sendText(
       "+1" + phone,
-      `Hello, ${name}! This is a confirmation of your place in line for ${restaurantName}. The estimate wait time is now ${
-        restaurant.waitlist.length * 5
-      } minute/s..., check the updated estimated wait time on https://line-up-usersite.herokuapp.com/${
+      `Hello, ${name}! This is a confirmation of your place in line for ${restaurantName}. Check the updated estimated wait time at https://line-up-usersite.herokuapp.com/${
         user._id
       }`
     );
