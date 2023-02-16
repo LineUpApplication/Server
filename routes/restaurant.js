@@ -4,8 +4,26 @@ import { User } from "../models/User.js";
 import { sendText } from "../utils/twilio.js";
 
 const router = express.Router();
-const ALMOST_MSG = `Your table is almost ready at ${restaurantName}. Please return to the restaurant so the host can seat you soon`;
-const FRONT_MSG = `Your table is ready at ${restaurantName}. Please checkin with the host so we can seat you as soon as possible`;
+const send_init_msg = (phone, name, restaurantName, userId) => {
+  sendText(
+    "+1" + phone,
+    `Hello, ${name}! This is a confirmation of your place in line for ${restaurantName}. Check the updated estimated wait time at https://line-up-usersite.herokuapp.com/${userId}`
+  );
+};
+
+const send_almost_msg = (phone, restaurantName) => {
+  sendText(
+    phone,
+    `Your table is almost ready at ${restaurantName}. Please return to the restaurant so the host can seat you soon`
+  );
+};
+
+const send_front_msg = (phone, restaurantName) => {
+  sendText(
+    phone,
+    `Your table is ready at ${restaurantName}. Please checkin with the host so we can seat you as soon as possible`
+  );
+};
 
 /********************************************************************
  *                        Restaurant Routes                         *
@@ -77,17 +95,12 @@ router.post("/addUser", async (req, res) => {
     } else {
       restaurant.waitlist.push({ user: user._id, partySize: partySize });
     }
-    sendText(
-      "+1" + phone,
-      `Hello, ${name}! This is a confirmation of your place in line for ${restaurantName}. Check the updated estimated wait time at https://line-up-usersite.herokuapp.com/${
-        user._id
-      }`
-    );
+    send_init_msg(phone, name, restaurantName, user._id)
     if (restaurant.waitlist.length == 2) {
-      sendText(phone, ALMOST_MSG);
+      send_almost_msg(phone, restaurantName);
     }
     if (restaurant.waitlist.length == 1) {
-      sendText(phone, FRONT_MSG);
+      send_front_msg(phone, restaurantName);
     }
     await restaurant.save();
     return res.status(200).send(restaurant);
@@ -118,8 +131,9 @@ router.post("/moveUser", async (req, res) => {
     } else {
       return res.status(400).send("User not in waitlist.");
     }
-    restaurant.waitlist = [userInfo, ...restaurant.waitlist];
+    restaurant.waitlist.splice(1, 0, userInfo);
     await restaurant.save();
+    send_almost_msg(user.phone, restaurantName);
     return res.status(200).send(restaurant);
   } catch (err) {
     console.log("Failed to move user: " + err);
@@ -143,16 +157,16 @@ router.post("/removeUser", async (req, res) => {
       if (index == 1) {
         if (restaurant.waitlist.length > 2) {
           user = await User.findById(restaurant.waitlist[2].user);
-          sendText(user.phone, ALMOST_MSG);
+          send_almost_msg(user.phone, restaurantName);
         }
       } else if (index == 0) {
         if (restaurant.waitlist.length > 1) {
           user = await User.findById(restaurant.waitlist[1].user);
-          sendText(user.phone, FRONT_MSG);
+          send_front_msg(user.phone, restaurantName);
         }
         if (restaurant.waitlist.length > 2) {
           user = await User.findById(restaurant.waitlist[2].user);
-          sendText(user.phone, ALMOST_MSG);
+          send_almost_msg(user.phone, restaurantName);
         }
       }
       restaurant.waitlist.splice(index, 1)[0];
@@ -183,7 +197,7 @@ router.post("/notifyUser", async (req, res) => {
       .map((userInfo) => userInfo.user.toString())
       .indexOf(user._id.toString());
     if (index > -1) {
-      await sendText(user.phone, ALMOST_MSG);
+      send_almost_msg(user.phone, restaurantName);
     } else {
       return res.status(400).send("User not in waitlist.");
     }
