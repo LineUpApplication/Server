@@ -25,6 +25,8 @@ const send_front_msg = (phone, restaurantName) => {
   );
 };
 
+const ESTIMATED_WAIT = 5 * 60000;
+
 /********************************************************************
  *                        Restaurant Routes                         *
  ********************************************************************/
@@ -47,7 +49,7 @@ router.get("/getUserInfo", async (req, res) => {
       return res.status(200).send({
         user: user,
         partySize: partySize,
-        place: place,
+        timestamp: place * ESTIMATED_WAIT + new Date().getTime(),
       });
     } else {
       return res.status(400).send("User not in waitlist.");
