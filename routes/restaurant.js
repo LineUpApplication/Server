@@ -7,7 +7,7 @@ const router = express.Router();
 const send_init_msg = (phone, name, restaurantName, userId) => {
   sendText(
     "+1" + phone,
-    `Hello, ${name}! This is a confirmation of your place in line at NoLine-Burgers & Fries. Check the updated estimated wait time at https://line-up-usersite.herokuapp.com/${userId}`
+    `Hello, ${name}! This is a confirmation of your place in line at Andy's Barbecue. Check your updated estimated wait time at https://line-up-usersite.herokuapp.com/${userId}`
   );
 };
 
