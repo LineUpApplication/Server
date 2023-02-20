@@ -7,7 +7,7 @@ const router = express.Router();
 const send_init_msg = (phone, name, restaurantName, userId) => {
   sendText(
     "+1" + phone,
-    `Hello, ${name}! This is a confirmation of your place in line for ${restaurantName}. Check the updated estimated wait time at https://line-up-usersite.herokuapp.com/${userId}`
+    `Hello, ${name}! This is a confirmation of your place in line at NoLine-Burgers & Fries. Check the updated estimated wait time at https://line-up-usersite.herokuapp.com/${userId}`
   );
 };
 
@@ -24,6 +24,13 @@ const send_front_msg = (phone, restaurantName) => {
     `Your table is ready at ${restaurantName}. Please checkin with the host so we can seat you as soon as possible`
   );
 };
+
+const send_selfRemove_msg = (phone, restaurantName) => {
+  sendText(
+  phone,
+  `You have sucessfully removed your party from the waitlist at ${restaurantName}`
+  );
+}
 
 const ESTIMATED_WAIT = 5 * 60000;
 

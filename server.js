@@ -31,4 +31,12 @@ app.use("/", home);
 app.use("/restaurant", restaurant);
 app.use("/payment", payment);
 
+//Listener for Msg
+// app.post('/message', (req, res) => {
+//   console.log(req.body);
+//   msgBody = req.body.Body;
+
+// })
+
+
 export default app;
