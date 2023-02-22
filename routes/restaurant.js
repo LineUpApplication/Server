@@ -1,38 +1,17 @@
 import express from "express";
 import { Restaurant } from "../models/Restaurant.js";
 import { User } from "../models/User.js";
-import { sendText } from "../utils/twilio.js";
+import {
+  sendInitText,
+  sendAlmostText,
+  sendFrontText,
+  messageResponder,
+} from "../utils/twilio.js";
 
 const router = express.Router();
-const send_init_msg = (phone, name, restaurantName, userId) => {
-  sendText(
-    "+1" + phone,
-    `Hello, ${name}! This is a confirmation of your place in line at Andy's Barbecue. Check your updated estimated wait time at https://line-up-usersite.herokuapp.com/${userId}`
-  );
-};
-
-const send_almost_msg = (phone, restaurantName) => {
-  sendText(
-    phone,
-    `Your table is almost ready at ${restaurantName}. Please return to the restaurant so the host can seat you soon`
-  );
-};
-
-const send_front_msg = (phone, restaurantName) => {
-  sendText(
-    phone,
-    `Your table is ready at ${restaurantName}. Please checkin with the host so we can seat you as soon as possible`
-  );
-};
-
-const send_selfRemove_msg = (phone, restaurantName) => {
-  sendText(
-  phone,
-  `You have sucessfully removed your party from the waitlist at ${restaurantName}`
-  );
-}
 
 const ESTIMATED_WAIT = 5 * 60000;
+const REMOVE_TEXT = "1";
 
 /********************************************************************
  *                        Restaurant Routes                         *
@@ -42,20 +21,17 @@ router.get("/getUserInfo", async (req, res) => {
   try {
     const name = req.query.name;
     const id = req.query.id;
-    let user, partySize, place;
+    let user;
     const restaurant = await Restaurant.findOne({ name: name });
     for (let i = 0; i < restaurant.waitlist.length; i++) {
-      let party = restaurant.waitlist[i];
-      if (party.user.toString() == id) {
+      let userId = restaurant.waitlist[i];
+      if (userId.toString() == id) {
         user = await User.findById(id);
-        partySize = party.partySize;
-        place = i;
       }
     }
     if (user) {
       return res.status(200).send({
         user: user,
-        partySize: partySize,
         timestamp: place * ESTIMATED_WAIT + new Date().getTime(),
       });
     } else {
@@ -91,25 +67,30 @@ router.post("/addUser", async (req, res) => {
     if (!restaurant) {
       return res.status(400).send("Restaurant does not exists.");
     }
-    let user = await User.findOne({ name: name, phone: phone });
+    let user = await User.findOne({ phone: phone });
     if (!user) {
-      user = new User({ name: name, phone: phone });
-      await user.save();
+      user = new User({ name: name, phone: phone, partySize: partySize });
     }
+    if (user.restaurant != "") {
+      return res.status(400).send("Restaurant does not exists.");
+    }
+    user.name = name;
+    user.partySize = partySize;
+    await user.save();
     const index = restaurant.waitlist
-      .map((userInfo) => userInfo.user.toString())
+      .map((userId) => userId.toString())
       .indexOf(user._id.toString());
     if (index > -1) {
-      restaurant.waitlist[index] = { user: user, partySize: partySize };
+      restaurant.waitlist[index] = user._id;
     } else {
-      restaurant.waitlist.push({ user: user._id, partySize: partySize });
+      restaurant.waitlist.push(user._id);
     }
-    send_init_msg(phone, name, restaurantName, user._id)
+    sendInitText(phone, name, restaurantName, user._id);
     if (restaurant.waitlist.length == 2) {
-      send_almost_msg(phone, restaurantName);
+      sendAlmostText(phone, restaurantName);
     }
     if (restaurant.waitlist.length == 1) {
-      send_front_msg(phone, restaurantName);
+      sendFrontText(phone, restaurantName);
     }
     await restaurant.save();
     return res.status(200).send(restaurant);
@@ -132,22 +113,31 @@ router.post("/moveUser", async (req, res) => {
       return res.status(400).send("User does not exists.");
     }
     const index = restaurant.waitlist
-      .map((userInfo) => userInfo.user.toString())
+      .map((userId) => userId.toString())
       .indexOf(user._id.toString());
-    let userInfo;
+    let userId;
     if (index > -1) {
-      userInfo = restaurant.waitlist.splice(index, 1)[0];
+      userId = restaurant.waitlist.splice(index, 1)[0];
     } else {
       return res.status(400).send("User not in waitlist.");
     }
-    restaurant.waitlist.splice(1, 0, userInfo);
+    restaurant.waitlist.splice(1, 0, userId);
     await restaurant.save();
-    send_almost_msg(user.phone, restaurantName);
+    sendAlmostText(user.phone, restaurantName);
     return res.status(200).send(restaurant);
   } catch (err) {
     console.log("Failed to move user: " + err);
     return res.status(400).send("Failed to move user: " + err);
   }
+});
+
+router.post("/sms", async (req, res) => {
+  const { responder, from, body } = messageResponder(req);
+  if (body == REMOVE_TEXT) {
+    const user = await User.find({ phone: from });
+
+  }
+  res.type("text/xml").send(responder.toString());
 });
 
 router.post("/removeUser", async (req, res) => {
@@ -159,23 +149,23 @@ router.post("/removeUser", async (req, res) => {
       return res.status(400).send("Restaurant does not exists.");
     }
     const index = restaurant.waitlist
-      .map((userInfo) => userInfo.user.toString())
+      .map((userId) => userId.toString())
       .indexOf(_id.toString());
     if (index > -1) {
       let user;
       if (index == 1) {
         if (restaurant.waitlist.length > 2) {
-          user = await User.findById(restaurant.waitlist[2].user);
-          send_almost_msg(user.phone, restaurantName);
+          user = await User.findById(restaurant.waitlist[2]);
+          sendAlmostText(user.phone, restaurantName);
         }
       } else if (index == 0) {
         if (restaurant.waitlist.length > 1) {
-          user = await User.findById(restaurant.waitlist[1].user);
-          send_front_msg(user.phone, restaurantName);
+          user = await User.findById(restaurant.waitlist[1]);
+          sendFrontText(user.phone, restaurantName);
         }
         if (restaurant.waitlist.length > 2) {
-          user = await User.findById(restaurant.waitlist[2].user);
-          send_almost_msg(user.phone, restaurantName);
+          user = await User.findById(restaurant.waitlist[2]);
+          sendAlmostText(user.phone, restaurantName);
         }
       }
       restaurant.waitlist.splice(index, 1)[0];
@@ -203,10 +193,10 @@ router.post("/notifyUser", async (req, res) => {
       return res.status(400).send("User does not exists.");
     }
     const index = restaurant.waitlist
-      .map((userInfo) => userInfo.user.toString())
+      .map((userId) => userId.toString())
       .indexOf(user._id.toString());
     if (index > -1) {
-      send_almost_msg(user.phone, restaurantName);
+      sendAlmostText(user.phone, restaurantName);
     } else {
       return res.status(400).send("User not in waitlist.");
     }
@@ -224,12 +214,8 @@ router.get("/:name", async (req, res) => {
     if (name) {
       restaurant = await Restaurant.findOne({ name: name });
       restaurant = await Promise.all(
-        restaurant.waitlist.map(async (userInfo) => {
-          const user = await User.findById(userInfo.user);
-          return {
-            user: user,
-            partySize: userInfo.partySize,
-          };
+        restaurant.waitlist.map(async (userId) => {
+          return await User.findById(userId);
         })
       );
     } else {

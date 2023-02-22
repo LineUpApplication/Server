@@ -13,6 +13,15 @@ const UserSchema = new mongoose.Schema({
     type: String,
     required: true,
     length: 10,
+    unique: true,
+  },
+  partySize: {
+    type: Number,
+    required: true,
+  },
+  restaurant: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: "Restaurant",
   },
 });
 

@@ -1,6 +1,4 @@
 import mongoose from "mongoose";
-import { sendText } from "../utils/twilio.js";
-import { User } from "./User.js";
 
 const RestaurantSchema = new mongoose.Schema({
   name: {
@@ -8,13 +6,8 @@ const RestaurantSchema = new mongoose.Schema({
   },
   waitlist: [
     {
-      user: {
-        type: mongoose.Schema.Types.ObjectId,
-        ref: "User",
-      },
-      partySize: {
-        type: Number,
-      },
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "User",
     },
   ],
 });
