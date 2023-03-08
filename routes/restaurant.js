@@ -27,10 +27,10 @@ const send_front_msg = (phone, restaurantName) => {
 
 const send_selfRemove_msg = (phone, restaurantName) => {
   sendText(
-  phone,
-  `You have sucessfully removed your party from the waitlist at ${restaurantName}`
+    phone,
+    `You have sucessfully removed your party from the waitlist at ${restaurantName}`
   );
-}
+};
 
 const ESTIMATED_WAIT = 5 * 60000;
 
@@ -104,7 +104,7 @@ router.post("/addUser", async (req, res) => {
     } else {
       restaurant.waitlist.push({ user: user._id, partySize: partySize });
     }
-    send_init_msg(phone, name, restaurantName, user._id)
+    send_init_msg(phone, name, restaurantName, user._id);
     if (restaurant.waitlist.length == 2) {
       send_almost_msg(phone, restaurantName);
     }
@@ -141,6 +141,7 @@ router.post("/moveUser", async (req, res) => {
       return res.status(400).send("User not in waitlist.");
     }
     restaurant.waitlist.splice(1, 0, userInfo);
+    restaurant.linepassLimit -= 1;
     await restaurant.save();
     send_almost_msg(user.phone, restaurantName);
     return res.status(200).send(restaurant);
@@ -215,6 +216,27 @@ router.post("/notifyUser", async (req, res) => {
     console.log("Failed to move user: " + err);
     return res.status(400).send("Failed to move user: " + err);
   }
+});
+
+router.get("/linepassCount", async (req, res) => {
+  const restaurantName = req.body.restaurant;
+  let restaurant = await Restaurant.findOne({ name: restaurantName });
+  if (!restaurant) {
+    return res.status(400).send("Restaurant does not exists.");
+  }
+  return res.status(200).send({ linepassCount: restaurant.linepassCount });
+});
+
+router.post("/dailyReset", async (req, res) => {
+  let restaurants = await Restaurant.find({});
+  await Promise.all(
+    restaurants.map(async (restaurant) => {
+      restaurant.waitlist = [];
+      await restaurant.save();
+    })
+  );
+  restaurants = await Restaurant.find({});
+  return res.status(200).send(restaurants);
 });
 
 router.get("/:name", async (req, res) => {

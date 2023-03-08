@@ -17,6 +17,10 @@ const RestaurantSchema = new mongoose.Schema({
       },
     },
   ],
+  linepassLimit: {
+    type: Number,
+    default: 0,
+  }
 });
 
 export const Restaurant = mongoose.model("Restaurant", RestaurantSchema);
