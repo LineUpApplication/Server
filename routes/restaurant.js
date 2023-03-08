@@ -218,8 +218,8 @@ router.post("/notifyUser", async (req, res) => {
   }
 });
 
-router.get("/linepassCount", async (req, res) => {
-  const restaurantName = req.body.restaurant;
+router.get("/linepassCount/:restaurant", async (req, res) => {
+  const restaurantName = req.params.restaurant;
   let restaurant = await Restaurant.findOne({ name: restaurantName });
   if (!restaurant) {
     return res.status(400).send("Restaurant does not exists.");
