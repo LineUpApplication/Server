@@ -17,7 +17,7 @@ const RestaurantSchema = new mongoose.Schema({
       },
     },
   ],
-  linepassLimit: {
+  linepassCount: {
     type: Number,
     default: 0,
   }
