@@ -32,6 +32,13 @@ const send_selfRemove_msg = (phone, restaurantName) => {
   );
 };
 
+const send_removed_msg = (phone, restaurantName) => {
+  sendText(
+    phone,
+    `Your party has been removed from the waitlist at ${restaurantName}`
+  );
+};
+
 const ESTIMATED_WAIT = 5 * 60000;
 
 /********************************************************************
@@ -180,6 +187,8 @@ router.post("/removeUser", async (req, res) => {
         }
       }
       restaurant.waitlist.splice(index, 1)[0];
+      user = await User.findById(_id);
+      send_removed_msg(user.phone, restaurantName);
     } else {
       return res.status(400).send("User not in waitlist.");
     }
