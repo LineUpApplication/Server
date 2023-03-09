@@ -12,6 +12,10 @@ const RestaurantSchema = new mongoose.Schema({
         type: mongoose.Schema.Types.ObjectId,
         ref: "User",
       },
+      data: {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: "Data",
+      },
       partySize: {
         type: Number,
       },

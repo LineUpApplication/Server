@@ -22,6 +22,7 @@ app.use(bodyParser.json())
 import  home from "./routes/home.js";
 import restaurant from "./routes/restaurant.js";
 import payment from "./routes/payment.js";
+import { update } from "./utils/ml.js";
 
 // middleware
 app.use(express.json());

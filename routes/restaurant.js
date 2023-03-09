@@ -1,6 +1,8 @@
 import express from "express";
+import { Data } from "../models/Data.js";
 import { Restaurant } from "../models/Restaurant.js";
 import { User } from "../models/User.js";
+import { predict, update } from "../utils/ml.js";
 import { sendText } from "../utils/twilio.js";
 
 const router = express.Router();
@@ -39,7 +41,7 @@ const send_removed_msg = (phone, restaurantName) => {
   );
 };
 
-const ESTIMATED_WAIT = 5 * 60000;
+const MINUTE = 60000;
 
 /********************************************************************
  *                        Restaurant Routes                         *
@@ -60,10 +62,11 @@ router.get("/getUserInfo", async (req, res) => {
       }
     }
     if (user) {
+      const estimatedWait = (await predict(partySize, place, restaurant._id)) * MINUTE;
       return res.status(200).send({
         user: user,
         partySize: partySize,
-        timestamp: place * ESTIMATED_WAIT + new Date().getTime(),
+        timestamp: estimatedWait + new Date().getTime(),
       });
     } else {
       return res.status(400).send("User not in waitlist.");
@@ -103,21 +106,49 @@ router.post("/addUser", async (req, res) => {
       user = new User({ name: name, phone: phone });
       await user.save();
     }
-    const index = restaurant.waitlist
+    let index = restaurant.waitlist
       .map((userInfo) => userInfo.user.toString())
       .indexOf(user._id.toString());
+    let data;
     if (index > -1) {
-      restaurant.waitlist[index] = { user: user, partySize: partySize };
+      await Data.deleteOne({ _id: restaurant.waitlist[index].data });
+      const estimatedWait = await predict(partySize, index, restaurant._id);
+      data = new Data({
+        user: user._id,
+        restaurant: restaurant._id,
+        partySize: partySize,
+        prediction: estimatedWait,
+        placeInLine: index,
+      });
+      restaurant.waitlist[index] = {
+        user: user._id,
+        partySize: partySize,
+        data: data._id,
+      };
     } else {
-      restaurant.waitlist.push({ user: user._id, partySize: partySize });
+      index = restaurant.waitlist.length;
+      const estimatedWait = await predict(partySize, index, restaurant._id);
+      data = new Data({
+        user: user._id,
+        restaurant: restaurant._id,
+        partySize: partySize,
+        prediction: estimatedWait,
+        placeInLine: index,
+      });
+      restaurant.waitlist.push({
+        user: user._id,
+        partySize: partySize,
+        data: data._id,
+      });
     }
     send_init_msg(phone, name, restaurantName, user._id);
-    if (restaurant.waitlist.length == 2) {
+    if (index == 1) {
       send_almost_msg(phone, restaurantName);
     }
-    if (restaurant.waitlist.length == 1) {
+    if (index == 0) {
       send_front_msg(phone, restaurantName);
     }
+    await data.save();
     await restaurant.save();
     return res.status(200).send(restaurant);
   } catch (err) {
@@ -142,13 +173,23 @@ router.post("/moveUser", async (req, res) => {
       .map((userInfo) => userInfo.user.toString())
       .indexOf(user._id.toString());
     let userInfo;
-    if (index > -1) {
-      userInfo = restaurant.waitlist.splice(index, 1)[0];
-    } else {
+    if (index < 0) {
       return res.status(400).send("User not in waitlist.");
     }
+    userInfo = restaurant.waitlist.splice(index, 1)[0];
+    await Data.deleteOne({ _id: userInfo.data });
+    const estimatedWait = await predict(userInfo.partySize, index, restaurant._id);
+    let data = new Data({
+      user: user._id,
+      restaurant: restaurant._id,
+      partySize: userInfo.partySize,
+      prediction: estimatedWait,
+      placeInLine: 1,
+    });
+    userInfo.data = data._id;
     restaurant.waitlist.splice(1, 0, userInfo);
     restaurant.linepassLimit -= 1;
+    await data.save();
     await restaurant.save();
     send_almost_msg(user.phone, restaurantName);
     return res.status(200).send(restaurant);
@@ -169,30 +210,77 @@ router.post("/removeUser", async (req, res) => {
     const index = restaurant.waitlist
       .map((userInfo) => userInfo.user.toString())
       .indexOf(_id.toString());
-    if (index > -1) {
-      let user;
-      if (index == 1) {
-        if (restaurant.waitlist.length > 2) {
-          user = await User.findById(restaurant.waitlist[2].user);
-          send_almost_msg(user.phone, restaurantName);
-        }
-      } else if (index == 0) {
-        if (restaurant.waitlist.length > 1) {
-          user = await User.findById(restaurant.waitlist[1].user);
-          send_front_msg(user.phone, restaurantName);
-        }
-        if (restaurant.waitlist.length > 2) {
-          user = await User.findById(restaurant.waitlist[2].user);
-          send_almost_msg(user.phone, restaurantName);
-        }
-      }
-      restaurant.waitlist.splice(index, 1)[0];
-      user = await User.findById(_id);
-      send_removed_msg(user.phone, restaurantName);
-    } else {
+    if (index < 0) {
       return res.status(400).send("User not in waitlist.");
     }
+    let user;
+    const userInfo = restaurant.waitlist.splice(index, 1)[0];
+    console.log(userInfo)
+    await Data.deleteOne({ _id: userInfo.data });
+    user = await User.findById(_id);
+    send_removed_msg(user.phone, restaurantName);
     await restaurant.save();
+    if (index == 1) {
+      if (restaurant.waitlist.length > 1) {
+        user = await User.findById(restaurant.waitlist[1].user);
+        send_almost_msg(user.phone, restaurantName);
+      }
+    } else if (index == 0) {
+      if (restaurant.waitlist.length > 0) {
+        user = await User.findById(restaurant.waitlist[0].user);
+        send_front_msg(user.phone, restaurantName);
+      }
+      if (restaurant.waitlist.length > 1) {
+        user = await User.findById(restaurant.waitlist[1].user);
+        send_almost_msg(user.phone, restaurantName);
+      }
+    }
+    return res.status(200).send(restaurant);
+  } catch (err) {
+    console.log(err);
+    return res.status(400).send("Failed to remove user: " + err);
+  }
+});
+
+router.post("/checkinUser", async (req, res) => {
+  try {
+    const { _id } = req.body.userInfo;
+    const restaurantName = req.body.restaurant;
+    let restaurant = await Restaurant.findOne({ name: restaurantName });
+    if (!restaurant) {
+      return res.status(400).send("Restaurant does not exists.");
+    }
+    const index = restaurant.waitlist
+      .map((userInfo) => userInfo.user.toString())
+      .indexOf(_id.toString());
+    if (index < 0) {
+      return res.status(400).send("User not in waitlist.");
+    }
+    let user;
+    const userInfo = restaurant.waitlist.splice(index, 1)[0];
+    const data = await Data.findById(userInfo.data);
+    const currentTime = new Date().getTime();
+    const joinedTime = data.createdAt.getTime();
+    data.actual = (currentTime - joinedTime) / MINUTE;
+    await data.save();
+    update(data._id, restaurant._id)
+    user = await User.findById(_id);
+    await restaurant.save();
+    if (index == 1) {
+      if (restaurant.waitlist.length > 1) {
+        user = await User.findById(restaurant.waitlist[1].user);
+        send_almost_msg(user.phone, restaurantName);
+      }
+    } else if (index == 0) {
+      if (restaurant.waitlist.length > 0) {
+        user = await User.findById(restaurant.waitlist[0].user);
+        send_front_msg(user.phone, restaurantName);
+      }
+      if (restaurant.waitlist.length > 1) {
+        user = await User.findById(restaurant.waitlist[1].user);
+        send_almost_msg(user.phone, restaurantName);
+      }
+    }
     return res.status(200).send(restaurant);
   } catch (err) {
     console.log(err);
