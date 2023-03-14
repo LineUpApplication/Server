@@ -4,6 +4,8 @@ import { Restaurant } from "../models/Restaurant.js";
 import { User } from "../models/User.js";
 import { predict, update } from "../utils/ml.js";
 import { sendText } from "../utils/twilio.js";
+import bcrypt from "bcrypt";
+import { generateAuthToken } from "../models/Restaurant.js";
 
 const router = express.Router();
 const send_init_msg = async (phone, name, restaurantName, userId) => {
@@ -49,10 +51,9 @@ const MINUTE = 60000;
 
 router.get("/getUserInfo", async (req, res) => {
   try {
-    const name = req.query.name;
-    const id = req.query.id;
+    const { rid, id } = req.query;
     let user, partySize, place;
-    const restaurant = await Restaurant.findOne({ name: name });
+    const restaurant = await Restaurant.findOne({ rid: rid });
     for (let i = 0; i < restaurant.waitlist.length; i++) {
       let party = restaurant.waitlist[i];
       if (party.user.toString() == id) {
@@ -62,7 +63,8 @@ router.get("/getUserInfo", async (req, res) => {
       }
     }
     if (user) {
-      const estimatedWait = (await predict(partySize, place, restaurant._id)) * MINUTE;
+      const estimatedWait =
+        (await predict(partySize, place, restaurant._id)) * MINUTE;
       return res.status(200).send({
         user: user,
         partySize: partySize,
@@ -77,27 +79,46 @@ router.get("/getUserInfo", async (req, res) => {
   }
 });
 
-router.post("/addRestaurant", async (req, res) => {
+router.post("/register", async (req, res) => {
   try {
-    const name = req.body.name;
-    let restaurant = await Restaurant.findOne({ name: name });
+    const { rid, name, password } = req.body;
+    let restaurant = await Restaurant.findOne({ rid: rid });
     if (restaurant) {
-      return res.status(400).send("Restaurant already added.");
+      return res.status(400).send("Restaurant already exists.");
     }
-    restaurant = new Restaurant({ name: name, waitlist: [] });
+    restaurant = new Restaurant({ rid: rid, name: name, waitlist: [] });
+    const salt = await bcrypt.genSalt(10);
+    const hash = await bcrypt.hash(password, salt);
+    restaurant.password = hash;
     await restaurant.save();
-    return res.status(200).send(restaurant);
+    const token = generateAuthToken(restaurant);
+    return res.status(200).send(token);
   } catch (err) {
     console.log("Failed to add restaurant: " + err);
     return res.status(400).send("Failed to add restaurant: " + err);
   }
 });
 
+router.post("/login", async (req, res) => {
+  try {
+    const { rid, password } = req.body;
+    let restaurant = await Restaurant.findOne({ rid: rid });
+    if (!restaurant) return res.status(400).send("Incorrect restaurant ID.");
+    const validPassword = bcrypt.compare(password, restaurant.password);
+    if (!validPassword) return res.status(400).send("Incorrect password.");
+    const token = generateAuthToken(restaurant);
+    return res.status(200).send(token);
+  } catch (error) {
+    return res.status(400).send(error);
+  }
+});
+
 router.post("/addUser", async (req, res) => {
   try {
     const { name, phone, partySize } = req.body.userInfo;
-    const restaurantName = req.body.restaurant;
-    let restaurant = await Restaurant.findOne({ name: restaurantName });
+    const { rid } = req.body.restaurant;
+    const restaurantName = req.body.restaurant.name;
+    let restaurant = await Restaurant.findOne({ rid: rid });
     if (!restaurant) {
       return res.status(400).send("Restaurant does not exists.");
     }
@@ -156,8 +177,9 @@ router.post("/addUser", async (req, res) => {
 router.post("/moveUser", async (req, res) => {
   try {
     const { id } = req.body.userInfo;
-    const restaurantName = req.body.restaurant;
-    let restaurant = await Restaurant.findOne({ name: restaurantName });
+    const { rid } = req.body.restaurant;
+    const restaurantName = req.body.restaurant.name;
+    let restaurant = await Restaurant.findOne({ rid: rid });
     if (!restaurant) {
       return res.status(400).send("Restaurant does not exists.");
     }
@@ -196,8 +218,9 @@ router.post("/moveUser", async (req, res) => {
 router.post("/removeUser", async (req, res) => {
   try {
     const { _id } = req.body.userInfo;
-    const restaurantName = req.body.restaurant;
-    let restaurant = await Restaurant.findOne({ name: restaurantName });
+    const { rid } = req.body.restaurant;
+    const restaurantName = req.body.restaurant.name;
+    let restaurant = await Restaurant.findOne({ rid: rid });
     if (!restaurant) {
       return res.status(400).send("Restaurant does not exists.");
     }
@@ -209,7 +232,7 @@ router.post("/removeUser", async (req, res) => {
     }
     let user;
     const userInfo = restaurant.waitlist.splice(index, 1)[0];
-    console.log(userInfo)
+    console.log(userInfo);
     await Data.deleteOne({ _id: userInfo.data });
     user = await User.findById(_id);
     await send_removed_msg(user.phone, restaurantName);
@@ -239,8 +262,9 @@ router.post("/removeUser", async (req, res) => {
 router.post("/checkinUser", async (req, res) => {
   try {
     const { _id } = req.body.userInfo;
-    const restaurantName = req.body.restaurant;
-    let restaurant = await Restaurant.findOne({ name: restaurantName });
+    const { rid } = req.body.restaurant;
+    const restaurantName = req.body.restaurant.name;
+    let restaurant = await Restaurant.findOne({ rid: rid });
     if (!restaurant) {
       return res.status(400).send("Restaurant does not exists.");
     }
@@ -257,7 +281,7 @@ router.post("/checkinUser", async (req, res) => {
     const joinedTime = data.createdAt.getTime();
     data.actual = (currentTime - joinedTime) / MINUTE;
     await data.save();
-    update(restaurant._id)
+    update(restaurant._id);
     user = await User.findById(_id);
     await restaurant.save();
     if (index == 1) {
@@ -285,8 +309,9 @@ router.post("/checkinUser", async (req, res) => {
 router.post("/notifyUser", async (req, res) => {
   try {
     const { _id } = req.body.userInfo;
-    const restaurantName = req.body.restaurant;
-    let restaurant = await Restaurant.findOne({ name: restaurantName });
+    const { rid } = req.body.restaurant;
+    const restaurantName = req.body.restaurant.name;
+    let restaurant = await Restaurant.findOne({ rid: rid });
     if (!restaurant) {
       return res.status(400).send("Restaurant does not exists.");
     }
@@ -309,9 +334,9 @@ router.post("/notifyUser", async (req, res) => {
   }
 });
 
-router.get("/linepassCount/:restaurant", async (req, res) => {
-  const restaurantName = req.params.restaurant;
-  let restaurant = await Restaurant.findOne({ name: restaurantName });
+router.get("/linepassCount/:rid", async (req, res) => {
+  const rid = req.params.rid;
+  let restaurant = await Restaurant.findOne({ rid: rid });
   if (!restaurant) {
     return res.status(400).send("Restaurant does not exists.");
   }
@@ -330,12 +355,12 @@ router.post("/dailyReset", async (req, res) => {
   return res.status(200).send(restaurants);
 });
 
-router.get("/:name", async (req, res) => {
+router.get("/:rid", async (req, res) => {
   try {
-    const name = req.params.name;
+    const rid = req.params.rid;
     let restaurant;
-    if (name) {
-      restaurant = await Restaurant.findOne({ name: name });
+    if (rid) {
+      restaurant = await Restaurant.findOne({ rid: rid });
       restaurant = await Promise.all(
         restaurant.waitlist.map(async (userInfo) => {
           const user = await User.findById(userInfo.user);

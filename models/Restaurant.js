@@ -1,9 +1,15 @@
 import mongoose from "mongoose";
-import { sendText } from "../utils/twilio.js";
-import { User } from "./User.js";
+import jwt from "jsonwebtoken";
 
 const RestaurantSchema = new mongoose.Schema({
+  rid: {
+    type: String,
+    unique: true,
+  },
   name: {
+    type: String,
+  },
+  password: {
     type: String,
   },
   waitlist: [
@@ -24,11 +30,15 @@ const RestaurantSchema = new mongoose.Schema({
   linepassCount: {
     type: Number,
     default: 0,
-  }
+  },
 });
 
 export const Restaurant = mongoose.model("Restaurant", RestaurantSchema);
 
-Restaurant.watch().on("change", async (data) => {
-  // mongodb listener
-});
+export function generateAuthToken(restaurant) {
+  const token = jwt.sign(
+    { _id: restaurant._id, rid: restaurant.rid, name: restaurant.name },
+    process.env.JWT_PRIVATE_KEY
+  );
+  return token;
+}

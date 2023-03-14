@@ -9,11 +9,11 @@ const client = twilio(accountSid, authToken);
 
 const sendText = async (to, body) => {
   try {
-    // const result = await client.messages.create({
-    //   body: body,
-    //   from: "+16304071061",
-    //   to: to,
-    // });
+    const result = await client.messages.create({
+      body: body,
+      from: "+16304071061",
+      to: to,
+    });
   } catch (err) {
     console.log(err);
   }
