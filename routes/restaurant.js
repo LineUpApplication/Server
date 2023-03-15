@@ -281,7 +281,7 @@ router.post("/checkinUser", async (req, res) => {
     const joinedTime = data.createdAt.getTime();
     data.actual = (currentTime - joinedTime) / MINUTE;
     await data.save();
-    update(restaurant._id);
+    // update(restaurant._id);
     user = await User.findById(_id);
     await restaurant.save();
     if (index == 1) {
