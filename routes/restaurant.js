@@ -11,7 +11,7 @@ const router = express.Router();
 const send_init_msg = async (phone, name, restaurantName, userId, rid) => {
   await sendText(
     "+1" + phone,
-    `Hello, ${name}! This is a confirmation of your place in line at ${restaurantName}. Check your updated estimated wait time at http://192.168.50.186:3000/${rid}/${userId}`
+    `Hello, ${name}! This is a confirmation of your place in line at ${restaurantName}. Check your updated estimated wait time at https://line-up-usersite.herokuapp.com/${rid}/${userId}`
   );
 };
 
