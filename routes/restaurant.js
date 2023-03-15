@@ -8,10 +8,10 @@ import bcrypt from "bcrypt";
 import { generateAuthToken } from "../models/Restaurant.js";
 
 const router = express.Router();
-const send_init_msg = async (phone, name, restaurantName, userId) => {
+const send_init_msg = async (phone, name, restaurantName, userId, rid) => {
   await sendText(
     "+1" + phone,
-    `Hello, ${name}! This is a confirmation of your place in line at ${restaurantName}. Check your updated estimated wait time at http://192.168.50.186:3000/${userId}`
+    `Hello, ${name}! This is a confirmation of your place in line at ${restaurantName}. Check your updated estimated wait time at http://192.168.50.186:3000/${rid}/${userId}`
   );
 };
 
@@ -66,6 +66,7 @@ router.get("/getUserInfo", async (req, res) => {
       const estimatedWait =
         (await predict(partySize, place, restaurant._id)) * MINUTE;
       return res.status(200).send({
+        restaurant: restaurant,
         user: user,
         partySize: partySize,
         timestamp: estimatedWait + new Date().getTime(),
@@ -158,7 +159,7 @@ router.post("/addUser", async (req, res) => {
         data: data._id,
       });
     }
-    await send_init_msg(phone, name, restaurantName, user._id);
+    await send_init_msg(phone, name, restaurantName, user._id, rid);
     if (index == 1) {
       await send_almost_msg(phone, restaurantName);
     }
