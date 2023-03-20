@@ -344,7 +344,7 @@ router.get("/linepassCount/:rid", async (req, res) => {
   if (!restaurant) {
     return res.status(400).send("Restaurant does not exists.");
   }
-  return res.status(200).send({ linepassActivated: restaurant.linepassCount });
+  return res.status(200).send({ linepassCount: restaurant.linepassCount });
 });
 
 router.get("/isLinepassActivated/:rid", async (req, res) => {
@@ -384,10 +384,10 @@ router.get("/linepassTimeSaving/:rid/:id", async (req, res) => {
   const index = restaurant.waitlist
     .map((userInfo) => userInfo.user.toString())
     .indexOf(user._id.toString());
-  let userInfo;
   if (index < 0) {
     return res.status(400).send("User not in waitlist.");
   }
+  const userInfo = restaurant.waitlist[index];
   const oldEstimatedWait = await predict(
     userInfo.partySize,
     index,
@@ -396,7 +396,10 @@ router.get("/linepassTimeSaving/:rid/:id", async (req, res) => {
   const newEstimatedWait = await predict(userInfo.partySize, 2, restaurant._id);
   return res
     .status(200)
-    .send({ timeSaving: oldEstimatedWait - newEstimatedWait });
+    .send({
+      timeSaving: oldEstimatedWait - newEstimatedWait,
+      newEstimatedWait: newEstimatedWait,
+    });
 });
 
 router.post("/dailyReset", async (req, res) => {
