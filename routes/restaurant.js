@@ -1,6 +1,7 @@
 import express from "express";
 import { Data } from "../models/Data.js";
 import { Restaurant } from "../models/Restaurant.js";
+import { Model } from "../models/Model.js";
 import { User } from "../models/User.js";
 import { predict, update } from "../utils/ml.js";
 import { sendText } from "../utils/twilio.js";
@@ -92,6 +93,8 @@ router.post("/register", async (req, res) => {
     const hash = await bcrypt.hash(password, salt);
     restaurant.password = hash;
     await restaurant.save();
+    const model = new Model({ w1: 1, w2: 5, b: 0, restaurant: restaurant._id });
+    await model.save();
     const token = generateAuthToken(restaurant);
     return res.status(200).send(token);
   } catch (err) {
@@ -341,7 +344,59 @@ router.get("/linepassCount/:rid", async (req, res) => {
   if (!restaurant) {
     return res.status(400).send("Restaurant does not exists.");
   }
-  return res.status(200).send({ linepassCount: restaurant.linepassCount });
+  return res.status(200).send({ linepassActivated: restaurant.linepassCount });
+});
+
+router.get("/isLinepassActivated/:rid", async (req, res) => {
+  const rid = req.params.rid;
+  let restaurant = await Restaurant.findOne({ rid: rid });
+  if (!restaurant) {
+    return res.status(400).send("Restaurant does not exists.");
+  }
+  return res
+    .status(200)
+    .send({ linepassActivated: restaurant.linepassActivated });
+});
+
+router.post("/setLinepassActivated", async (req, res) => {
+  const { rid, linepassActivated } = req.body.restaurant;
+  let restaurant = await Restaurant.findOne({ rid: rid });
+  if (!restaurant) {
+    return res.status(400).send("Restaurant does not exists.");
+  }
+  restaurant.linepassActivated = linepassActivated;
+  await restaurant.save();
+  return res
+    .status(200)
+    .send({ linepassActivated: restaurant.linepassActivated });
+});
+
+router.get("/linepassTimeSaving/:rid/:id", async (req, res) => {
+  const { rid, id } = req.params;
+  let restaurant = await Restaurant.findOne({ rid: rid });
+  if (!restaurant) {
+    return res.status(400).send("Restaurant does not exists.");
+  }
+  let user = await User.findById(id);
+  if (!user) {
+    return res.status(400).send("User does not exists.");
+  }
+  const index = restaurant.waitlist
+    .map((userInfo) => userInfo.user.toString())
+    .indexOf(user._id.toString());
+  let userInfo;
+  if (index < 0) {
+    return res.status(400).send("User not in waitlist.");
+  }
+  const oldEstimatedWait = await predict(
+    userInfo.partySize,
+    index,
+    restaurant._id
+  );
+  const newEstimatedWait = await predict(userInfo.partySize, 2, restaurant._id);
+  return res
+    .status(200)
+    .send({ timeSaving: oldEstimatedWait - newEstimatedWait });
 });
 
 router.post("/dailyReset", async (req, res) => {

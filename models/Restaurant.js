@@ -31,6 +31,10 @@ const RestaurantSchema = new mongoose.Schema({
     type: Number,
     default: 0,
   },
+  linepassActivated: {
+    type: Boolean,
+    default: false,
+  }
 });
 
 export const Restaurant = mongoose.model("Restaurant", RestaurantSchema);
