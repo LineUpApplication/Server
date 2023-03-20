@@ -3,7 +3,7 @@ import stripe from "stripe";
 import dotenv from "dotenv";
 dotenv.config();
 
-const client = stripe(process.env.STRIPE_SECRET_TEST)
+const client = stripe(process.env.STRIPE_SECRET_TEST);
 const router = express.Router();
 
 /********************************************************************
@@ -11,27 +11,19 @@ const router = express.Router();
  ********************************************************************/
 
 router.post("/charge", async (req, res) => {
-	let { amount, id } = req.body
-	try {
-		const payment = await client.paymentIntents.create({
-			amount,
-			currency: "USD",
-			description: "Spatula company",
-			payment_method: id,
-			confirm: true
-		})
-		res.json({
-			message: "Payment successful",
-			success: true
-		})
-	} catch (error) {
-		console.log("Payment error: ", error)
-		res.json({
-			message: "Payment failed",
-			success: false
-		})
-	}
+  let { amount, id } = req.body;
+  try {
+    const payment = await client.paymentIntents.create({
+      amount,
+      currency: "USD",
+      description: "Spatula company",
+      payment_method: id,
+      confirm: true,
+    });
+    res.status(200);
+  } catch (error) {
+    return res.status(400).send("Payment failed: " + err);
+  }
 });
 
 export default router;
-

@@ -113,6 +113,7 @@ router.post("/login", async (req, res) => {
     const token = generateAuthToken(restaurant);
     return res.status(200).send(token);
   } catch (error) {
+    console.log(error);
     return res.status(400).send(error);
   }
 });
@@ -306,7 +307,7 @@ router.post("/checkinUser", async (req, res) => {
     return res.status(200).send(restaurant);
   } catch (err) {
     console.log(err);
-    return res.status(400).send("Failed to remove user: " + err);
+    return res.status(400).send("Failed to checkin user: " + err);
   }
 });
 
@@ -333,85 +334,128 @@ router.post("/notifyUser", async (req, res) => {
     }
     return res.status(200);
   } catch (err) {
-    console.log("Failed to move user: " + err);
-    return res.status(400).send("Failed to move user: " + err);
+    console.log(err);
+    return res.status(400).send("Failed to notify user: " + err);
   }
 });
 
 router.get("/linepassCount/:rid", async (req, res) => {
-  const rid = req.params.rid;
-  let restaurant = await Restaurant.findOne({ rid: rid });
-  if (!restaurant) {
-    return res.status(400).send("Restaurant does not exists.");
+  try {
+    const rid = req.params.rid;
+    let restaurant = await Restaurant.findOne({ rid: rid });
+    if (!restaurant) {
+      return res.status(400).send("Restaurant does not exists.");
+    }
+    return res.status(200).send({ linepassCount: restaurant.linepassCount });
+  } catch (error) {
+    console.log(error);
+    return res.status(400).send(error);
   }
-  return res.status(200).send({ linepassCount: restaurant.linepassCount });
+});
+
+router.post("/setLinepassCount", async (req, res) => {
+  try {
+    const { rid, linepassCount } = req.body.restaurant;
+    let restaurant = await Restaurant.findOne({ rid: rid });
+    if (!restaurant) {
+      return res.status(400).send("Restaurant does not exists.");
+    }
+    restaurant.linepassCount = linepassCount;
+    await restaurant.save();
+    return res.status(200).send({ linepassCount: restaurant.linepassCount });
+  } catch (error) {
+    console.log(error);
+    return res.status(400).send(error);
+  }
 });
 
 router.get("/isLinepassActivated/:rid", async (req, res) => {
-  const rid = req.params.rid;
-  let restaurant = await Restaurant.findOne({ rid: rid });
-  if (!restaurant) {
-    return res.status(400).send("Restaurant does not exists.");
+  try {
+    const rid = req.params.rid;
+    let restaurant = await Restaurant.findOne({ rid: rid });
+    if (!restaurant) {
+      return res.status(400).send("Restaurant does not exists.");
+    }
+    return res
+      .status(200)
+      .send({ linepassActivated: restaurant.linepassActivated });
+  } catch (error) {
+    console.log(error);
+    return res.status(400).send(error);
   }
-  return res
-    .status(200)
-    .send({ linepassActivated: restaurant.linepassActivated });
 });
 
 router.post("/setLinepassActivated", async (req, res) => {
-  const { rid, linepassActivated } = req.body.restaurant;
-  let restaurant = await Restaurant.findOne({ rid: rid });
-  if (!restaurant) {
-    return res.status(400).send("Restaurant does not exists.");
+  try {
+    const { rid, linepassActivated } = req.body.restaurant;
+    let restaurant = await Restaurant.findOne({ rid: rid });
+    if (!restaurant) {
+      return res.status(400).send("Restaurant does not exists.");
+    }
+    restaurant.linepassActivated = linepassActivated;
+    await restaurant.save();
+    return res
+      .status(200)
+      .send({ linepassActivated: restaurant.linepassActivated });
+  } catch (error) {
+    console.log(error);
+    return res.status(400).send(error);
   }
-  restaurant.linepassActivated = linepassActivated;
-  await restaurant.save();
-  return res
-    .status(200)
-    .send({ linepassActivated: restaurant.linepassActivated });
 });
 
 router.get("/linepassTimeSaving/:rid/:id", async (req, res) => {
-  const { rid, id } = req.params;
-  let restaurant = await Restaurant.findOne({ rid: rid });
-  if (!restaurant) {
-    return res.status(400).send("Restaurant does not exists.");
-  }
-  let user = await User.findById(id);
-  if (!user) {
-    return res.status(400).send("User does not exists.");
-  }
-  const index = restaurant.waitlist
-    .map((userInfo) => userInfo.user.toString())
-    .indexOf(user._id.toString());
-  if (index < 0) {
-    return res.status(400).send("User not in waitlist.");
-  }
-  const userInfo = restaurant.waitlist[index];
-  const oldEstimatedWait = await predict(
-    userInfo.partySize,
-    index,
-    restaurant._id
-  );
-  const newEstimatedWait = await predict(userInfo.partySize, 2, restaurant._id);
-  return res
-    .status(200)
-    .send({
+  try {
+    const { rid, id } = req.params;
+    let restaurant = await Restaurant.findOne({ rid: rid });
+    if (!restaurant) {
+      return res.status(400).send("Restaurant does not exists.");
+    }
+    let user = await User.findById(id);
+    if (!user) {
+      return res.status(400).send("User does not exists.");
+    }
+    const index = restaurant.waitlist
+      .map((userInfo) => userInfo.user.toString())
+      .indexOf(user._id.toString());
+    if (index < 0) {
+      return res.status(400).send("User not in waitlist.");
+    }
+    const userInfo = restaurant.waitlist[index];
+    const oldEstimatedWait = await predict(
+      userInfo.partySize,
+      index,
+      restaurant._id
+    );
+    const newEstimatedWait = await predict(
+      userInfo.partySize,
+      2,
+      restaurant._id
+    );
+    return res.status(200).send({
       timeSaving: oldEstimatedWait - newEstimatedWait,
       newEstimatedWait: newEstimatedWait,
     });
+  } catch (error) {
+    console.log(error);
+    return res.status(400).send(error);
+  }
 });
 
 router.post("/dailyReset", async (req, res) => {
-  let restaurants = await Restaurant.find({});
-  await Promise.all(
-    restaurants.map(async (restaurant) => {
-      restaurant.waitlist = [];
-      await restaurant.save();
-    })
-  );
-  restaurants = await Restaurant.find({});
-  return res.status(200).send(restaurants);
+  try {
+    let restaurants = await Restaurant.find({});
+    await Promise.all(
+      restaurants.map(async (restaurant) => {
+        restaurant.waitlist = [];
+        await restaurant.save();
+      })
+    );
+    restaurants = await Restaurant.find({});
+    return res.status(200).send(restaurants);
+  } catch (error) {
+    console.log(error);
+    return res.status(400).send(error);
+  }
 });
 
 router.get("/:rid", async (req, res) => {
