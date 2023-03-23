@@ -108,7 +108,7 @@ router.post("/login", async (req, res) => {
     const { rid, password } = req.body;
     let restaurant = await Restaurant.findOne({ rid: rid });
     if (!restaurant) return res.status(400).send("Incorrect restaurant ID.");
-    const validPassword = bcrypt.compare(password, restaurant.password);
+    const validPassword = await bcrypt.compare(password, restaurant.password);
     if (!validPassword) return res.status(400).send("Incorrect password.");
     const token = generateAuthToken(restaurant);
     return res.status(200).send(token);
