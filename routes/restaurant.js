@@ -122,8 +122,8 @@ router.post("/addUser", async (req, res) => {
   try {
     const { name, phone, partySize } = req.body.userInfo;
     const { rid } = req.body.restaurant;
-    const restaurantName = req.body.restaurant.name;
     let restaurant = await Restaurant.findOne({ rid: rid });
+    const restaurantName = restaurant.name;
     if (!restaurant) {
       return res.status(400).send("Restaurant does not exists.");
     }
@@ -183,8 +183,8 @@ router.post("/moveUser", async (req, res) => {
   try {
     const { id } = req.body.userInfo;
     const { rid } = req.body.restaurant;
-    const restaurantName = req.body.restaurant.name;
     let restaurant = await Restaurant.findOne({ rid: rid });
+    const restaurantName = restaurant.name;
     if (!restaurant) {
       return res.status(400).send("Restaurant does not exists.");
     }
@@ -224,8 +224,8 @@ router.post("/removeUser", async (req, res) => {
   try {
     const { _id } = req.body.userInfo;
     const { rid } = req.body.restaurant;
-    const restaurantName = req.body.restaurant.name;
     let restaurant = await Restaurant.findOne({ rid: rid });
+    const restaurantName = restaurant.name;
     if (!restaurant) {
       return res.status(400).send("Restaurant does not exists.");
     }
@@ -268,8 +268,8 @@ router.post("/checkinUser", async (req, res) => {
   try {
     const { _id } = req.body.userInfo;
     const { rid } = req.body.restaurant;
-    const restaurantName = req.body.restaurant.name;
     let restaurant = await Restaurant.findOne({ rid: rid });
+    const restaurantName = restaurant.name;
     if (!restaurant) {
       return res.status(400).send("Restaurant does not exists.");
     }
@@ -315,8 +315,8 @@ router.post("/notifyUser", async (req, res) => {
   try {
     const { _id } = req.body.userInfo;
     const { rid } = req.body.restaurant;
-    const restaurantName = req.body.restaurant.name;
     let restaurant = await Restaurant.findOne({ rid: rid });
+    const restaurantName = restaurant.name;
     if (!restaurant) {
       return res.status(400).send("Restaurant does not exists.");
     }
