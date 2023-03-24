@@ -3,7 +3,7 @@ import stripe from "stripe";
 import dotenv from "dotenv";
 dotenv.config();
 
-const client = stripe(process.env.STRIPE_SECRET_TEST);
+const client = stripe(process.env.STRIPE_SECRET_KEY);
 const router = express.Router();
 
 /********************************************************************
@@ -16,7 +16,7 @@ router.post("/charge", async (req, res) => {
     const payment = await client.paymentIntents.create({
       amount,
       currency: "USD",
-      description: "Spatula company",
+      description: "LineUp",
       payment_method: id,
       confirm: true,
     });

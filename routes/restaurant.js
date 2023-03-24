@@ -428,7 +428,7 @@ router.get("/linepassTimeSaving/:rid/:id", async (req, res) => {
     );
     const newEstimatedWait = await predict(
       userInfo.partySize,
-      2,
+      1,
       restaurant._id
     );
     return res.status(200).send({
