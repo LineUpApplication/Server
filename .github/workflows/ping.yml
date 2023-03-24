@@ -20,4 +20,4 @@ jobs:
     steps:
       # Runs a single command using the runners shell
       - name: ping the herokuapps
-        run: curl -w "dns_resolution: %{time_namelookup}, tcp_established: %{time_connect}, ssl_handshake_done: %{time_appconnect}, TTFB: %{time_starttransfer}\n" -o /dev/null -s "https://line-up-usersite.herokuapp.com/" && curl -w "dns_resolution: %{time_namelookup}, tcp_established: %{time_connect}, ssl_handshake_done: %{time_appconnect}, TTFB: %{time_starttransfer}\n" -o /dev/null -s "https://line-up.herokuapp.com/"
+        run: curl -w -o /dev/null -s "https://line-up-usersite.herokuapp.com/" && curl -w -o /dev/null -s "https://line-up.herokuapp.com/"
