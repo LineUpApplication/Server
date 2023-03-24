@@ -20,7 +20,10 @@ router.post("/charge", async (req, res) => {
       payment_method: id,
       confirm: true,
     });
-    res.status(200);
+    res.status(200).send({
+      message: "Payment successful",
+      success: true,
+    });
   } catch (error) {
     return res.status(400).send("Payment failed: " + err);
   }
