@@ -329,7 +329,7 @@ router.post("/notifyUser", async (req, res) => {
       .map((userInfo) => userInfo.user.toString())
       .indexOf(user._id.toString());
     if (index > -1) {
-      await send_almost_msg(user.phone, restaurantName);
+      await send_front_msg(user.phone, restaurantName);
     } else {
       return res.status(400).send("User not in waitlist.");
     }

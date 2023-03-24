@@ -17,6 +17,7 @@ const sendText = async (to, body) => {
   } catch (err) {
     console.log(err);
   }
+  return;
 };
 
 export { sendText };
