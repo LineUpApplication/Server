@@ -71,6 +71,7 @@ router.get("/getUserInfo", async (req, res) => {
         user: user,
         partySize: partySize,
         timestamp: estimatedWait + new Date().getTime(),
+        place: place
       });
     } else {
       return res.status(400).send("User not in waitlist.");
