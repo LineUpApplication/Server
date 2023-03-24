@@ -60,7 +60,7 @@ router.get("/getUserInfo", async (req, res) => {
       if (party.user.toString() == id) {
         user = await User.findById(id);
         partySize = party.partySize;
-        place = i;
+        place = i + 1;
       }
     }
     if (user) {
