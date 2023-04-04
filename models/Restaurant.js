@@ -25,6 +25,31 @@ const RestaurantSchema = new mongoose.Schema({
       partySize: {
         type: Number,
       },
+      partyReady: {
+        type: Boolean,
+      },
+    },
+  ],
+  listings: [
+    {
+      user: {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: "User",
+      },
+      payment: {
+        type: {
+          type: String,
+        },
+        info: {
+          type: String,
+        },
+      },
+      price: {
+        type: Number,
+      },
+      bought: {
+        type: Boolean,
+      },
     },
   ],
   linepassCount: {
@@ -34,7 +59,7 @@ const RestaurantSchema = new mongoose.Schema({
   linepassActivated: {
     type: Boolean,
     default: false,
-  }
+  },
 });
 
 export const Restaurant = mongoose.model("Restaurant", RestaurantSchema);
