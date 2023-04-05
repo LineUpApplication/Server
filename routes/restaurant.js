@@ -64,19 +64,19 @@ const send_position_bought_msg = async (restaurant, position) => {
   );
 };
 
-const send_encourage_sell = async (phone) => {
-  await sendText(
-    phone,
-    `You are near the front of the line! If you are okay with getting seated later, list your party's position for sale!`
-  );
-};
+// const send_encourage_sell = async (phone) => {
+//   await sendText(
+//     phone,
+//     `You are near the front of the line! If you are okay with getting seated later, list your party's position for sale!`
+//   );
+// };
 
-const send_encourage_buy = async (phone) => {
-  await sendText(
-    phone,
-    `You can swap positions with parties that are selling their spot in line, checkout the marketplace for position listings.`
-  );
-};
+// const send_encourage_buy = async (phone) => {
+//   await sendText(
+//     phone,
+//     `You can swap positions with parties that are selling their spot in line, checkout the marketplace for position listings.`
+//   );
+// };
 
 const MINUTE = 60000;
 
@@ -210,9 +210,9 @@ router.post("/addUser", async (req, res) => {
     if (index == 0) {
       await send_front_msg(phone, restaurantName);
     }
-    if (index < 5) {
-      await send_encourage_sell(phone);
-    }
+    // if (index < 5) {
+    //   await send_encourage_sell(phone);
+    // }
     await send_live_support();
     await data.save();
     await restaurant.save();
@@ -306,10 +306,10 @@ router.post("/removeUser", async (req, res) => {
         await send_almost_msg(user.phone, restaurantName);
       }
     }
-    if (index < 5) {
-      user = await User.findById(restaurant.waitlist[4].user);
-      await send_encourage_sell(user.phone);
-    }
+    // if (index < 5) {
+    //   user = await User.findById(restaurant.waitlist[4].user);
+    //   await send_encourage_sell(user.phone);
+    // }
     return res.status(200).send(restaurant);
   } catch (err) {
     console.log(err);
