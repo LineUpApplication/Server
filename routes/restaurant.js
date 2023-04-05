@@ -522,7 +522,11 @@ router.post("/dailyReset", async (req, res) => {
     let restaurants = await Restaurant.find({});
     await Promise.all(
       restaurants.map(async (restaurant) => {
+        if (restaurant.name == "test") {
+          return;
+        }
         restaurant.waitlist = [];
+        restaurant.listings = [];
         await restaurant.save();
       })
     );
