@@ -51,6 +51,12 @@ const send_pay_now_msg = async (phone, name, payment, amount) => {
   );
 };
 
+const send_position_bought_msg = async (restaurant, position) => {
+  await sendText(
+    `Your position at ${restaurant} has been sold, you have been moved to position ${position}, you will receive your payment once you've checked in at the restaurant.`
+  );
+};
+
 const MINUTE = 60000;
 
 /********************************************************************
@@ -518,7 +524,7 @@ router.post("/setPartyReady", async (req, res) => {
     await restaurant.save();
     res.status(200).send(userInfo);
   } catch (error) {
-    console.log(error)
+    console.log(error);
     return res.status(400).send(error);
   }
 });
@@ -610,6 +616,7 @@ router.post("/swapPosition", async (req, res) => {
     restaurant.waitlist[waitlistSellerIndex] = buyerInfo;
     restaurant.waitlist[waitlistBuyerIndex] = sellerInfo;
     await restaurant.save();
+    await send_position_bought_msg(restaurant.name, waitlistBuyerIndex + 1);
     return res.status(200).send(restaurant.waitlist);
   } catch (error) {
     console.log(error);
