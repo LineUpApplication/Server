@@ -9,45 +9,52 @@ import bcrypt from "bcrypt";
 import { generateAuthToken } from "../models/Restaurant.js";
 
 const router = express.Router();
-const send_init_msg = async (phone, name, restaurantName, userId, rid) => {
+const send_init_msg_cn = async (phone, name, restaurantName, userId, rid) => {
   await sendText(
     phone,
     `Hello, ${name}! This is a confirmation of your place in line at ${restaurantName}. Check your updated estimated wait time at https://line-up-usersite.herokuapp.com/${rid}/${userId}/en`
   );
 };
+const send_init_msg_en = async (phone, name, restaurantName, userId, rid) => {
+  await sendText(
+    phone,
+    `您好，${name}！ 您已成功加入${restaurantName}的等候名单。点此查看当前预估等候时间 https://line-up-usersite.herokuapp.com/${rid}/${userId}/cn`
+  )
+}
+
 
 const send_live_support = async (phone) => {
   await sendText(
     phone,
-    `For questions about LineUp services, contact +19495298312`
+    `For questions about LineUp services, contact +9495655311. 如果有任何问题或需要帮助，可以联系 +9495655311`
   );
 };
 
 const send_almost_msg = async (phone, restaurantName) => {
   await sendText(
     phone,
-    `Your table is almost ready at ${restaurantName}. Please return to the restaurant so the host can seat you soon`
+    `Your table is almost ready at ${restaurantName}. Please return to the restaurant so the host can seat you soon. 您在${restaurantName}的餐桌即将准备就绪，请尽快到餐厅通知前台工作人员，期待您的光临！`
   );
 };
 
 const send_front_msg = async (phone, restaurantName) => {
   await sendText(
     phone,
-    `Your table is ready at ${restaurantName}. Please checkin with the host so we can seat you as soon as possible`
+    `Your table is ready at ${restaurantName}. Please checkin with the host so we can seat you as soon as possible. 您在${restaurantName}的餐桌已经准备就绪，请通知餐厅前台工作人员，祝您用餐愉快！`
   );
 };
 
 const send_selfRemove_msg = async (phone, restaurantName) => {
   await sendText(
     phone,
-    `You have sucessfully removed your party from the waitlist at ${restaurantName}`
+    `You have sucessfully removed your party from the waitlist at ${restaurantName}. `
   );
 };
 
 const send_removed_msg = async (phone, restaurantName) => {
   await sendText(
     phone,
-    `Your party has been removed from the waitlist at ${restaurantName}`
+    `Your party has been removed from the waitlist at ${restaurantName}. 您已被餐厅移除。`
   );
 };
 
@@ -202,7 +209,8 @@ router.post("/addUser", async (req, res) => {
         data: data._id,
       });
     }
-    await send_init_msg(phone, name, restaurantName, user._id, rid);
+    await send_init_msg_en(phone, name, restaurantName, user._id, rid);
+    await send_init_msg_cn(phone, name, restaurantName, user._id, rid);
 
     if (index == 1) {
       await send_almost_msg(phone, restaurantName);
