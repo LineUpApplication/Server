@@ -11,8 +11,15 @@ import { generateAuthToken } from "../models/Restaurant.js";
 const router = express.Router();
 const send_init_msg = async (phone, name, restaurantName, userId, rid) => {
   await sendText(
-    "+1" + phone,
+    phone,
     `Hello, ${name}! This is a confirmation of your place in line at ${restaurantName}. Check your updated estimated wait time at https://line-up-usersite.herokuapp.com/${rid}/${userId}/en`
+  );
+};
+
+const send_live_support = async (phone) => {
+  await sendText(
+    phone,
+    `For questions about LineUp services, contact +19495298312`
   );
 };
 
@@ -54,6 +61,20 @@ const send_pay_now_msg = async (phone, name, payment, amount) => {
 const send_position_bought_msg = async (restaurant, position) => {
   await sendText(
     `Your position at ${restaurant} has been sold, you have been moved to position ${position}, you will receive your payment once you've checked in at the restaurant.`
+  );
+};
+
+const send_encourage_sell = async (phone) => {
+  await sendText(
+    phone,
+    `You are near the front of the line! If you are okay with getting seated later, list your party's position for sale!`
+  );
+};
+
+const send_encourage_buy = async (phone) => {
+  await sendText(
+    phone,
+    `You can swap positions with parties that are selling their spot in line, checkout the marketplace for position listings.`
   );
 };
 
@@ -189,6 +210,10 @@ router.post("/addUser", async (req, res) => {
     if (index == 0) {
       await send_front_msg(phone, restaurantName);
     }
+    if (index < 5) {
+      await send_encourage_buy(phone);
+    }
+    await send_live_support();
     await data.save();
     await restaurant.save();
     return res.status(200).send(restaurant);
@@ -346,6 +371,10 @@ router.post("/checkinUser", async (req, res) => {
         user = await User.findById(restaurant.waitlist[1].user);
         await send_almost_msg(user.phone, restaurantName);
       }
+    }
+    if (index == 5) {
+      user = await User.findById(restaurant.waitlist[4].user);
+      await send_encourage_sell(user.phone);
     }
     return res.status(200).send(restaurant);
   } catch (err) {
