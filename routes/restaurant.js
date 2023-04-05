@@ -18,10 +18,9 @@ const send_init_msg_cn = async (phone, name, restaurantName, userId, rid) => {
 const send_init_msg_en = async (phone, name, restaurantName, userId, rid) => {
   await sendText(
     phone,
-    `您好，${name}！ 您已成功加入${restaurantName}的等候名单。点此查看当前预估等候时间 https://line-up-usersite.herokuapp.com/${rid}/${userId}/cn`
-  )
-}
-
+    `您好，${name}! 您已成功加入${restaurantName}的等候名单。点此查看当前预估等候时间 https://line-up-usersite.herokuapp.com/${rid}/${userId}/cn`
+  );
+};
 
 const send_live_support = async (phone) => {
   await sendText(
@@ -67,7 +66,7 @@ const send_pay_now_msg = async (phone, name, payment, amount) => {
 
 const send_position_bought_msg = async (restaurant, position) => {
   await sendText(
-    `Your position at ${restaurant} has been sold, you have been moved to position ${position}, you will receive your payment once you've checked in at the restaurant.`
+    `Your position at ${restaurant} has been sold, you have been moved to position ${position}, you will receive your payment once you've checked in at the restaurant. 您在${restaurant}餐厅等候名单中出售的位置已经售出，您当前在队列中排第${position}位。您会于30分钟之内收到此次交易的首款。`
   );
 };
 
