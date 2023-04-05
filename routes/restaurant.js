@@ -211,7 +211,7 @@ router.post("/addUser", async (req, res) => {
       await send_front_msg(phone, restaurantName);
     }
     if (index < 5) {
-      await send_encourage_buy(phone);
+      await send_encourage_sell(phone);
     }
     await send_live_support();
     await data.save();
@@ -306,6 +306,10 @@ router.post("/removeUser", async (req, res) => {
         await send_almost_msg(user.phone, restaurantName);
       }
     }
+    if (index < 5) {
+      user = await User.findById(restaurant.waitlist[4].user);
+      await send_encourage_sell(user.phone);
+    }
     return res.status(200).send(restaurant);
   } catch (err) {
     console.log(err);
@@ -372,7 +376,7 @@ router.post("/checkinUser", async (req, res) => {
         await send_almost_msg(user.phone, restaurantName);
       }
     }
-    if (index == 5) {
+    if (index < 5) {
       user = await User.findById(restaurant.waitlist[4].user);
       await send_encourage_sell(user.phone);
     }
