@@ -43,6 +43,13 @@ const send_front_msg = async (phone, restaurantName) => {
   );
 };
 
+const send_notify_msg = async (phone, restaurantName) => {
+  await sendText(
+    phone,
+    `Your table is ready at ${restaurantName}. Please checkin with the host within 5-10 mintues so we can seat you as soon as possible. 您在${restaurantName}的餐桌已经准备就绪，请在5-10分钟之内通知餐厅前台工作人员，祝您用餐愉快！`
+  );
+};
+
 const send_selfRemove_msg = async (phone, restaurantName) => {
   await sendText(
     phone,
@@ -220,7 +227,7 @@ router.post("/addUser", async (req, res) => {
     // if (index < 5) {
     //   await send_encourage_sell(phone);
     // }
-    await send_live_support();
+    await send_live_support(phone);
     await data.save();
     await restaurant.save();
     return res.status(200).send(restaurant);
@@ -411,11 +418,50 @@ router.post("/notifyUser", async (req, res) => {
       .map((userInfo) => userInfo.user.toString())
       .indexOf(user._id.toString());
     if (index > -1) {
-      await send_front_msg(user.phone, restaurantName);
+      await send_notify_msg(user.phone, restaurantName);
     } else {
       return res.status(400).send("User not in waitlist.");
     }
-    return res.status(200);
+    // Remove user after certain time
+    setTimeout(async () => {
+      let restaurant = await Restaurant.findOne({ rid: rid });
+      if (!restaurant) {
+        return res.status(400).send("Restaurant does not exists.");
+      }
+      const index = restaurant.waitlist
+        .map((userInfo) => userInfo.user.toString())
+        .indexOf(user._id.toString());
+      if (index < 0) {
+        return res.status(400).send("User not in waitlist.");
+      }
+      const userInfo = restaurant.waitlist.splice(index, 1)[0];
+      console.log(userInfo);
+      await Data.deleteOne({ _id: userInfo.data });
+      user = await User.findById(_id);
+      await send_removed_msg(user.phone, restaurantName);
+      await restaurant.save();
+      for (let i = 0; i < restaurant.listings.length; i++) {
+        if (restaurant.listings[i].user._id === user._id) {
+          restaurant.listings.splice(i, 1);
+        }
+      }
+      if (index == 1) {
+        if (restaurant.waitlist.length > 1) {
+          user = await User.findById(restaurant.waitlist[1].user);
+          await send_almost_msg(user.phone, restaurantName);
+        }
+      } else if (index == 0) {
+        if (restaurant.waitlist.length > 0) {
+          user = await User.findById(restaurant.waitlist[0].user);
+          await send_front_msg(user.phone, restaurantName);
+        }
+        if (restaurant.waitlist.length > 1) {
+          user = await User.findById(restaurant.waitlist[1].user);
+          await send_almost_msg(user.phone, restaurantName);
+        }
+      }
+    }, 15 * MINUTE);
+    return res.status(200).send(restaurant);
   } catch (err) {
     console.log(err);
     return res.status(400).send("Failed to notify user: " + err);
