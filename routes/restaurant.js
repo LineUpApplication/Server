@@ -231,7 +231,7 @@ router.post("/addUser", async (req, res) => {
     await send_live_support(phone);
     await data.save();
     await restaurant.save();
-    return res.status(200).send(restaurant);
+    return res.status(200).send(user);
   } catch (err) {
     console.log("Failed to add user: " + err);
     return res.status(400).send("Failed to add user: " + err);
