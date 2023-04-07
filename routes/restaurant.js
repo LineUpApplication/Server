@@ -12,13 +12,13 @@ const router = express.Router();
 const send_init_msg_cn = async (phone, name, restaurantName, userId, rid) => {
   await sendText(
     phone,
-    `Hello, ${name}! This is a confirmation of your place in line at ${restaurantName}. Check your updated estimated wait time at https://line-up-usersite.herokuapp.com/${rid}/${userId}/en`
+    `Hello, ${name}! This is a confirmation of your place in line at ${restaurantName}. Check your waitlist status or notify restaurant about your party status at https://line-up-usersite.herokuapp.com/${rid}/${userId}/en`
   );
 };
 const send_init_msg_en = async (phone, name, restaurantName, userId, rid) => {
   await sendText(
     phone,
-    `您好，${name}! 您已成功加入${restaurantName}的等候名单。点此查看当前预估等候时间 https://line-up-usersite.herokuapp.com/${rid}/${userId}/cn`
+    `您好，${name}! 您已成功加入${restaurantName}的等候名单。点此查看您的位置或通知餐厅party是否到齐 https://line-up-usersite.herokuapp.com/${rid}/${userId}/cn`
   );
 };
 
