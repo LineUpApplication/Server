@@ -7,6 +7,7 @@ import { predict, update } from "../utils/ml.js";
 import { sendText } from "../utils/twilio.js";
 import bcrypt from "bcrypt";
 import { generateAuthToken } from "../models/Restaurant.js";
+import axios from "axios";
 
 const router = express.Router();
 const send_init_msg_cn = async (phone, name, restaurantName, userId, rid) => {
@@ -356,25 +357,25 @@ router.post("/checkinUser", async (req, res) => {
     // update(restaurant._id);
     user = await User.findById(_id);
     await restaurant.save();
-    // for (let i = 0; i < restaurant.listings.length; i++) {
-    //   if (restaurant.listings[i].user.toString() === user._id.toString()) {
-    //     if (restaurant.listings[i].bought) {
-    //       await send_pay_now_msg(
-    //         "9495298312",
-    //         user.name,
-    //         restaurant.listings[i].payment,
-    //         restaurant.listings[i].price
-    //       );
-    //       await send_pay_now_msg(
-    //         "9495655311",
-    //         user.name,
-    //         restaurant.listings[i].payment,
-    //         restaurant.listings[i].price
-    //       );
-    //     }
-    //     restaurant.listings.splice(i, 1);
-    //   }
-    // }
+    for (let i = 0; i < restaurant.listings.length; i++) {
+      if (restaurant.listings[i].user.toString() === user._id.toString()) {
+        if (restaurant.listings[i].bought) {
+          // await send_pay_now_msg(
+          //   "9495298312",
+          //   user.name,
+          //   restaurant.listings[i].payment,
+          //   restaurant.listings[i].price
+          // );
+          await send_pay_now_msg(
+            "9495655311",
+            user.name,
+            restaurant.listings[i].payment,
+            restaurant.listings[i].price
+          );
+        }
+        restaurant.listings.splice(i, 1);
+      }
+    }
     if (index == 1) {
       if (restaurant.waitlist.length > 1) {
         user = await User.findById(restaurant.waitlist[1].user);
@@ -390,10 +391,10 @@ router.post("/checkinUser", async (req, res) => {
         await send_almost_msg(user.phone, restaurantName);
       }
     }
-    if (index < 5) {
-      user = await User.findById(restaurant.waitlist[4].user);
-      await send_encourage_sell(user.phone);
-    }
+    // if (index < 5) {
+    //   user = await User.findById(restaurant.waitlist[4].user);
+    //   await send_encourage_sell(user.phone);
+    // }
     return res.status(200).send(restaurant);
   } catch (err) {
     console.log(err);
@@ -707,19 +708,6 @@ router.post("/swapPosition", async (req, res) => {
     restaurant.waitlist[waitlistBuyerIndex] = sellerInfo;
     await restaurant.save();
     await send_position_bought_msg(restaurant.name, waitlistBuyerIndex + 1);
-    const seller = await User.findById(sellerId);
-    await send_pay_now_msg(
-      "9495298312",
-      seller.name,
-      restaurant.listings[listingIndex].payment,
-      restaurant.listings[listingIndex].price
-    );
-    await send_pay_now_msg(
-      "9495655311",
-      seller.name,
-      restaurant.listings[listingIndex].payment,
-      restaurant.listings[listingIndex].price
-    );
     return res.status(200).send(restaurant.waitlist);
   } catch (error) {
     console.log(error);
