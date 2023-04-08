@@ -28,6 +28,9 @@ const RestaurantSchema = new mongoose.Schema({
       partyReady: {
         type: Boolean,
       },
+      notified: {
+        type: Boolean,
+      }
     },
   ],
   listings: [

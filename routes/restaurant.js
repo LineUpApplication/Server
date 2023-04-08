@@ -101,7 +101,7 @@ const MINUTE = 60000;
 router.get("/getUserInfo", async (req, res) => {
   try {
     const { rid, id } = req.query;
-    let user, partySize, partyReady, place;
+    let user, partySize, partyReady, place, notified;
     const restaurant = await Restaurant.findOne({ rid: rid });
     for (let i = 0; i < restaurant.waitlist.length; i++) {
       let party = restaurant.waitlist[i];
@@ -110,6 +110,7 @@ router.get("/getUserInfo", async (req, res) => {
         partySize = party.partySize;
         partyReady = party.partyReady;
         place = i + 1;
+        notified = party.notified;
       }
     }
     if (user) {
@@ -120,7 +121,7 @@ router.get("/getUserInfo", async (req, res) => {
         user: user,
         partySize: partySize,
         partyReady: partyReady,
-        timestamp: estimatedWait + new Date().getTime(),
+        // timestamp: estimatedWait + new Date().getTime(),
         place: place,
       });
     } else {
@@ -420,6 +421,7 @@ router.post("/notifyUser", async (req, res) => {
     const index = restaurant.waitlist
       .map((userInfo) => userInfo.user.toString())
       .indexOf(user._id.toString());
+    restaurant.waitlist[index].notified = true;
     if (index > -1) {
       await send_notify_msg(user.phone, restaurantName);
     } else {
@@ -767,6 +769,8 @@ router.get("/:rid", async (req, res) => {
             user: user,
             partySize: userInfo.partySize,
             partyReady: userInfo.partyReady,
+            notified: userInfo.notified,
+            timestamp: userInfo.data.createdAt,
           };
         })
       );
