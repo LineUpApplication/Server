@@ -228,6 +228,7 @@ router.post("/addUser", async (req, res) => {
     // if (index < 5) {
     //   await send_encourage_sell(phone);
     // }
+    restaurant.joinCount += 1;
     await send_live_support(phone);
     await data.save();
     await restaurant.save();
@@ -300,6 +301,7 @@ router.post("/removeUser", async (req, res) => {
     await Data.deleteOne({ _id: userInfo.data });
     user = await User.findById(_id);
     await send_removed_msg(user.phone, restaurantName);
+    restaurant.removeCount += 1;
     await restaurant.save();
     for (let i = 0; i < restaurant.listings.length; i++) {
       if (restaurant.listings[i].user._id === user._id) {
@@ -440,6 +442,7 @@ router.post("/notifyUser", async (req, res) => {
       await Data.deleteOne({ _id: userInfo.data });
       user = await User.findById(_id);
       await send_removed_msg(user.phone, restaurantName);
+      restaurant.removeCount += 1;
       await restaurant.save();
       for (let i = 0; i < restaurant.listings.length; i++) {
         if (restaurant.listings[i].user._id === user._id) {

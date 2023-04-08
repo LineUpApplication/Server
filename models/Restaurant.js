@@ -60,6 +60,14 @@ const RestaurantSchema = new mongoose.Schema({
     type: Boolean,
     default: false,
   },
+  joinCount: {
+    type: Number,
+    default: 0,
+  },
+  removeCount: {
+    type: Number,
+    default: 0,
+  },
 });
 
 export const Restaurant = mongoose.model("Restaurant", RestaurantSchema);
