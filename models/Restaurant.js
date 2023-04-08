@@ -30,6 +30,7 @@ const RestaurantSchema = new mongoose.Schema({
       },
       notified: {
         type: Boolean,
+        default: false
       }
     },
   ],

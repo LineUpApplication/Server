@@ -422,6 +422,7 @@ router.post("/notifyUser", async (req, res) => {
       .map((userInfo) => userInfo.user.toString())
       .indexOf(user._id.toString());
     restaurant.waitlist[index].notified = true;
+    await restaurant.save();
     if (index > -1) {
       await send_notify_msg(user.phone, restaurantName);
     } else {
@@ -765,9 +766,10 @@ router.get("/:rid", async (req, res) => {
       restaurant = await Promise.all(
         restaurant.waitlist.map(async (userInfo) => {
           const user = await User.findById(userInfo.user);
+          const data = await Data.findById(userInfo.data);
           return {
             user: user,
-            timestamp: userInfo.data.createdAt,
+            timestamp: data.createdAt,
             notified: userInfo.notified,
             partySize: userInfo.partySize,
             partyReady: userInfo.partyReady,
