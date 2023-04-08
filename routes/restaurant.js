@@ -767,10 +767,10 @@ router.get("/:rid", async (req, res) => {
           const user = await User.findById(userInfo.user);
           return {
             user: user,
+            timestamp: userInfo.data.createdAt,
+            notified: userInfo.notified,
             partySize: userInfo.partySize,
             partyReady: userInfo.partyReady,
-            notified: userInfo.notified,
-            timestamp: userInfo.data.createdAt,
           };
         })
       );
