@@ -706,6 +706,12 @@ router.post("/swapPosition", async (req, res) => {
     const buyerInfo = restaurant.waitlist[waitlistBuyerIndex];
     restaurant.waitlist[waitlistSellerIndex] = buyerInfo;
     restaurant.waitlist[waitlistBuyerIndex] = sellerInfo;
+    const buyer = await User.findById(buyerId);
+    if (waitlistSellerIndex == 0) {
+      await send_front_msg(buyer.phone, restaurant.name);
+    } else if (waitlistSellerIndex == 1) {
+      await send_almost_msg(buyer.phone, restaurant.name);
+    }
     await restaurant.save();
     await send_position_bought_msg(restaurant.name, waitlistBuyerIndex + 1);
     return res.status(200).send(restaurant.waitlist);
