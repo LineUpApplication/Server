@@ -121,7 +121,7 @@ router.get("/getUserInfo", async (req, res) => {
         user: user,
         partySize: partySize,
         partyReady: partyReady,
-        // timestamp: estimatedWait + new Date().getTime(),
+        timestamp: estimatedWait + new Date().getTime(),
         place: place,
       });
     } else {
