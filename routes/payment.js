@@ -1,9 +1,6 @@
 import express from "express";
-import stripe from "stripe";
-import dotenv from "dotenv";
-dotenv.config();
+import { sendPayment } from "../utils/stripe";
 
-const client = stripe(process.env.STRIPE_SECRET_KEY);
 const router = express.Router();
 
 /********************************************************************
@@ -13,13 +10,7 @@ const router = express.Router();
 router.post("/charge", async (req, res) => {
   let { amount, id } = req.body;
   try {
-    const payment = await client.paymentIntents.create({
-      amount,
-      currency: "USD",
-      description: "LineUp",
-      payment_method: id,
-      confirm: true,
-    });
+    await sendPayment(amount, id);
     res.status(200).send({
       message: "Payment successful",
       success: true,
