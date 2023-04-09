@@ -189,12 +189,14 @@ router.post("/addUser", async (req, res) => {
       .indexOf(user._id.toString());
     let data;
     if (index > -1) {
+      data = await Data.findById(restaurant.waitlist[index].data);
       await Data.deleteOne({ _id: restaurant.waitlist[index].data });
       data = new Data({
         user: user._id,
         restaurant: restaurant._id,
         partySize: partySize,
         placeInLine: index,
+        createdAt: data.createdAt,
       });
       restaurant.waitlist[index] = {
         user: user._id,
@@ -262,12 +264,14 @@ router.post("/moveUser", async (req, res) => {
       return res.status(400).send("User not in waitlist.");
     }
     userInfo = restaurant.waitlist.splice(index, 1)[0];
+    let data = await Data.findById(userInfo.data);
     await Data.deleteOne({ _id: userInfo.data });
-    let data = new Data({
+    data = new Data({
       user: user._id,
       restaurant: restaurant._id,
       partySize: userInfo.partySize,
       placeInLine: 1,
+      createdAt: new Date(),
     });
     userInfo.data = data._id;
     restaurant.waitlist.splice(1, 0, userInfo);

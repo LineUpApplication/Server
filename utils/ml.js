@@ -62,6 +62,7 @@ const generateData = async () => {
       partySize: partySize,
       placeInLine: placeInLine,
       actual: fakeActual,
+      createdAt: new Date(),
     });
     await data.save();
   }
