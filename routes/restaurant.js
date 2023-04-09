@@ -220,22 +220,18 @@ router.post("/addUser", async (req, res) => {
         data: data._id,
       });
     }
+    restaurant.joinCount += 1;
+    await data.save();
+    await restaurant.save();
     await send_init_msg_en(phone, name, restaurantName, user._id, rid);
     await send_init_msg_cn(phone, name, restaurantName, user._id, rid);
-
     if (index == 1) {
       await send_almost_msg(phone, restaurantName);
     }
     if (index == 0) {
       await send_front_msg(phone, restaurantName);
     }
-    // if (index < 5) {
-    //   await send_encourage_sell(phone);
-    // }
-    restaurant.joinCount += 1;
     await send_live_support(phone);
-    await data.save();
-    await restaurant.save();
     return res.status(200).send(user);
   } catch (err) {
     console.log("Failed to add user: " + err);
@@ -303,7 +299,6 @@ router.post("/removeUser", async (req, res) => {
     }
     let user;
     const userInfo = restaurant.waitlist.splice(index, 1)[0];
-    console.log(userInfo);
     await Data.deleteOne({ _id: userInfo.data });
     user = await User.findById(_id);
     await send_removed_msg(user.phone, restaurantName);
@@ -446,7 +441,6 @@ router.post("/notifyUser", async (req, res) => {
         return res.status(400).send("User not in waitlist.");
       }
       const userInfo = restaurant.waitlist.splice(index, 1)[0];
-      console.log(userInfo);
       await Data.deleteOne({ _id: userInfo.data });
       user = await User.findById(_id);
       await send_removed_msg(user.phone, restaurantName);
@@ -772,6 +766,7 @@ router.get("/:rid", async (req, res) => {
         restaurant.waitlist.map(async (userInfo) => {
           const user = await User.findById(userInfo.user);
           const data = await Data.findById(userInfo.data);
+          if (user.name == "fred") console.log(userInfo.data);
           return {
             user: user,
             timestamp: data ? data.createdAt : Date.now(),
