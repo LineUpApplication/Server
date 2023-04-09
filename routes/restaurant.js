@@ -209,6 +209,7 @@ router.post("/addUser", async (req, res) => {
         restaurant: restaurant._id,
         partySize: partySize,
         placeInLine: index,
+        createdAt: new Date(),
       });
       restaurant.waitlist.push({
         user: user._id,

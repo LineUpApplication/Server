@@ -24,7 +24,6 @@ const DataSchema = new mongoose.Schema({
   },
   createdAt: {
     type: Date,
-    default: new Date(),
   },
   actual: {
     type: Number,
