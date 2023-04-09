@@ -774,7 +774,7 @@ router.get("/:rid", async (req, res) => {
           const data = await Data.findById(userInfo.data);
           return {
             user: user,
-            timestamp: data.createdAt,
+            timestamp: data ? data.createdAt : Date.now(),
             notified: userInfo.notified,
             partySize: userInfo.partySize,
             partyReady: userInfo.partyReady,
