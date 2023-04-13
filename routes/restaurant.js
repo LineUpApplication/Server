@@ -239,6 +239,49 @@ router.post("/addUser", async (req, res) => {
   }
 });
 
+router.post("/updateUser", async (req, res) => {
+  try {
+    const { name, phone, partySize } = req.body.userInfo;
+    const { rid } = req.body.restaurant;
+    let restaurant = await Restaurant.findOne({ rid: rid });
+    if (!restaurant) {
+      return res.status(400).send("Restaurant does not exists.");
+    }
+    let user = await User.findOne({ name: name, phone: phone });
+    if (!user) {
+      return res.status(400).send("User does not exists.");
+    }
+    let index = restaurant.waitlist
+      .map((userInfo) => userInfo.user.toString())
+      .indexOf(user._id.toString());
+    let data;
+    if (index < 0) {
+      return res.status(400).send("User not in waitlist.");
+    }
+    data = await Data.findById(restaurant.waitlist[index].data);
+    await Data.deleteOne({ _id: restaurant.waitlist[index].data });
+    data = new Data({
+      user: user._id,
+      restaurant: restaurant._id,
+      partySize: partySize,
+      placeInLine: index,
+      createdAt: data.createdAt,
+    });
+    restaurant.waitlist[index] = {
+      user: user._id,
+      partySize: partySize,
+      partyReady: false,
+      data: data._id,
+    };
+    await data.save();
+    await restaurant.save();
+    return res.status(200).send(user);
+  } catch (err) {
+    console.log("Failed to update user: " + err);
+    return res.status(400).send("Failed to update user: " + err);
+  }
+});
+
 router.post("/moveUser", async (req, res) => {
   try {
     const { id } = req.body.userInfo;
@@ -766,7 +809,6 @@ router.get("/:rid", async (req, res) => {
         restaurant.waitlist.map(async (userInfo) => {
           const user = await User.findById(userInfo.user);
           const data = await Data.findById(userInfo.data);
-          if (user.name == "fred") console.log(userInfo.data);
           return {
             user: user,
             timestamp: data ? data.createdAt : Date.now(),
