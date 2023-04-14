@@ -7,7 +7,7 @@ import { predict, update } from "../utils/ml.js";
 import { sendText } from "../utils/twilio.js";
 import bcrypt from "bcrypt";
 import { generateAuthToken } from "../models/Restaurant.js";
-import axios from "axios";
+import { Actions } from "../utils/actionTypes.js";
 
 const router = express.Router();
 const send_init_msg_cn = async (phone, name, restaurantName, userId, rid) => {
@@ -302,6 +302,7 @@ router.post("/moveUser", async (req, res) => {
     if (index < 0) {
       return res.status(400).send("User not in waitlist.");
     }
+
     userInfo = restaurant.waitlist.splice(index, 1)[0];
     let data = await Data.findById(userInfo.data);
     await Data.deleteOne({ _id: userInfo.data });
@@ -346,12 +347,18 @@ router.post("/removeUser", async (req, res) => {
     user = await User.findById(_id);
     await send_removed_msg(user.phone, restaurantName);
     restaurant.removeCount += 1;
-    await restaurant.save();
     for (let i = 0; i < restaurant.listings.length; i++) {
       if (restaurant.listings[i].user._id === user._id) {
         restaurant.listings.splice(i, 1);
       }
     }
+    restaurant.historyList.push({
+      user: userInfo.user,
+      partySize: userInfo.partySize,
+      actionType: Actions.Removed,
+      timestamp: Date.now(),
+    });
+    await restaurant.save();
     if (index == 1) {
       if (restaurant.waitlist.length > 1) {
         user = await User.findById(restaurant.waitlist[1].user);
@@ -371,6 +378,7 @@ router.post("/removeUser", async (req, res) => {
     //   user = await User.findById(restaurant.waitlist[4].user);
     //   await send_encourage_sell(user.phone);
     // }
+
     return res.status(200).send(restaurant);
   } catch (err) {
     console.log(err);
@@ -395,6 +403,12 @@ router.post("/checkinUser", async (req, res) => {
     }
     let user;
     const userInfo = restaurant.waitlist.splice(index, 1)[0];
+    restaurant.historyList.push({
+      user: userInfo.user,
+      partySize: userInfo.partySize,
+      actionType: Actions.CheckedIn,
+      timestamp: Date.now(),
+    });
     const data = await Data.findById(userInfo.data);
     const currentTime = new Date().getTime();
     const joinedTime = data.createdAt.getTime();
@@ -402,7 +416,6 @@ router.post("/checkinUser", async (req, res) => {
     await data.save();
     // update(restaurant._id);
     user = await User.findById(_id);
-    await restaurant.save();
     for (let i = 0; i < restaurant.listings.length; i++) {
       if (restaurant.listings[i].user.toString() === user._id.toString()) {
         if (restaurant.listings[i].bought) {
@@ -422,6 +435,7 @@ router.post("/checkinUser", async (req, res) => {
         restaurant.listings.splice(i, 1);
       }
     }
+    await restaurant.save();
     if (index == 1) {
       if (restaurant.waitlist.length > 1) {
         user = await User.findById(restaurant.waitlist[1].user);
@@ -484,6 +498,12 @@ router.post("/notifyUser", async (req, res) => {
         return res.status(400).send("User not in waitlist.");
       }
       const userInfo = restaurant.waitlist.splice(index, 1)[0];
+      restaurant.historyList.push({
+        user: userInfo.user,
+        partySize: userInfo.partySize,
+        actionType: Actions.Removed,
+        timestamp: Date.now(),
+      });
       await Data.deleteOne({ _id: userInfo.data });
       user = await User.findById(_id);
       await send_removed_msg(user.phone, restaurantName);
@@ -796,6 +816,33 @@ router.post("/unlistPosition", async (req, res) => {
     return res.status(200).send(result);
   } catch (error) {
     return res.status(400).send(error);
+  }
+});
+
+router.get("/history/:rid", async (req, res) => {
+  try {
+    const rid = req.params.rid;
+    let restaurant;
+    if (rid) {
+      restaurant = await Restaurant.findOne({ rid: rid });
+      restaurant = await Promise.all(
+        restaurant.historyList?.map(async (historyInfo) => {
+          const user = await User.findById(historyInfo.user);
+          return {
+            user: user,
+            partySize: historyInfo.partySize,
+            actionType: historyInfo.actionType,
+            timestamp: historyInfo.timestamp,
+          };
+        })
+      );
+    } else {
+      return res.status(400).send("No name provided");
+    }
+    return res.status(200).send(restaurant);
+  } catch (err) {
+    console.log("Failed to get restaurant: " + err);
+    return res.status(400).send("Failed to get restaurant: " + err);
   }
 });
 
