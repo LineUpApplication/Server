@@ -34,6 +34,28 @@ const RestaurantSchema = new mongoose.Schema({
       }
     },
   ],
+  historyList: [
+    {
+      user: {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: "User",
+      },
+      data: {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: "Data",
+      },
+      partySize: {
+        type: Number,
+      },
+      partyReady: {
+        type: Boolean,
+      },
+      notified: {
+        type: Boolean,
+        default: false
+      }
+    },
+  ],
   listings: [
     {
       user: {

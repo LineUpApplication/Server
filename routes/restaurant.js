@@ -259,6 +259,7 @@ router.post("/moveUser", async (req, res) => {
     if (index < 0) {
       return res.status(400).send("User not in waitlist.");
     }
+
     userInfo = restaurant.waitlist.splice(index, 1)[0];
     let data = await Data.findById(userInfo.data);
     await Data.deleteOne({ _id: userInfo.data });
@@ -298,6 +299,10 @@ router.post("/removeUser", async (req, res) => {
       return res.status(400).send("User not in waitlist.");
     }
     let user;
+
+    restaurant.historyList.push(restaurant.waitlist[index]);
+    console.log('pushed to remove', restaurant.historyList)
+
     const userInfo = restaurant.waitlist.splice(index, 1)[0];
     await Data.deleteOne({ _id: userInfo.data });
     user = await User.findById(_id);
@@ -328,6 +333,7 @@ router.post("/removeUser", async (req, res) => {
     //   user = await User.findById(restaurant.waitlist[4].user);
     //   await send_encourage_sell(user.phone);
     // }
+
     return res.status(200).send(restaurant);
   } catch (err) {
     console.log(err);
@@ -351,6 +357,7 @@ router.post("/checkinUser", async (req, res) => {
       return res.status(400).send("User not in waitlist.");
     }
     let user;
+    restaurant.historyList.push(restaurant.waitlist[index]);
     const userInfo = restaurant.waitlist.splice(index, 1)[0];
     const data = await Data.findById(userInfo.data);
     const currentTime = new Date().getTime();
@@ -440,6 +447,7 @@ router.post("/notifyUser", async (req, res) => {
       if (index < 0) {
         return res.status(400).send("User not in waitlist.");
       }
+      restaurant.historyList.push(restaurant.waitlist[index]);
       const userInfo = restaurant.waitlist.splice(index, 1)[0];
       await Data.deleteOne({ _id: userInfo.data });
       user = await User.findById(_id);
@@ -784,6 +792,36 @@ router.get("/:rid", async (req, res) => {
     console.log("Failed to get restaurant: " + err);
     return res.status(400).send("Failed to get restaurant: " + err);
   }
-});
-
+}
+);
+router.get("/history/:rid", async (req, res) => {
+  try {
+    const rid = req.params.rid;
+    let restaurant;
+    if (rid) {
+      restaurant = await Restaurant.findOne({ rid: rid });
+      restaurant = await Promise.all(
+        restaurant.historyList?.map(async (userInfo) => {
+          const user = await User.findById(userInfo.user);
+          const data = await Data.findById(userInfo.data);
+          if (user.name == "fred") console.log(userInfo.data);
+          return {
+            user: user,
+            timestamp: data ? data.createdAt : Date.now(),
+            notified: userInfo.notified,
+            partySize: userInfo.partySize,
+            partyReady: userInfo.partyReady,
+          };
+        })
+      );
+    } else {
+      return res.status(400).send("No name provided");
+    }
+    return res.status(200).send(restaurant);
+  } catch (err) {
+    console.log("Failed to get restaurant: " + err);
+    return res.status(400).send("Failed to get restaurant: " + err);
+  }
+}
+);
 export default router;
