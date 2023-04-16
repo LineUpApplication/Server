@@ -718,7 +718,7 @@ router.post("/setPartyReady", async (req, res) => {
     userInfo.partyReady = !userInfo.partyReady;
     restaurant.waitlist[index] = userInfo;
     await restaurant.save();
-    res.status(200).send(userInfo);
+    return res.status(200).send(userInfo);
   } catch (error) {
     console.log(error);
     return res.status(400).send(error);
