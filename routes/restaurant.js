@@ -302,6 +302,7 @@ router.post("/updateUser", async (req, res) => {
       placeInLine: index,
       createdAt: data.createdAt,
     });
+    await data.save();
     restaurant.waitlist[index] = {
       user: user._id,
       partySize: partySize,
