@@ -877,7 +877,7 @@ router.get("/history/:rid", async (req, res) => {
         };
       })
     );
-    return res.status(200).send(historyList.reverse());
+    return res.status(200).send(historyList.reverse().slice(0, 20));
   } catch (err) {
     console.log("Failed to get restaurant: " + err);
     return res.status(400).send("Failed to get restaurant: " + err);
