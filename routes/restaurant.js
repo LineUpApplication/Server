@@ -24,43 +24,29 @@ const send_init_msg = async (phone, name, restaurantName, userId, rid) => {
 };
 
 const send_live_support = async (rid, phone) => {
-  if (rid == "kaiyuexuan" || rid == "spicycity") {
-    await sendText(
-      phone,
-      `For questions about LineUp services, contact +9495655311. 如果有任何问题或需要帮助，可以联系 +9495655311`
-    );
-  } else {
-    await sendText(
-      phone,
-      `For questions about LineUp services, contact +9495655311.`
-    );
-  }
+  // if (rid == "kaiyuexuan" || rid == "spicycity") {
+  //   await sendText(
+  //     phone,
+  //     `For questions about LineUp services, contact +9495655311. 如果有任何问题或需要帮助，可以联系 +9495655311`
+  //   );
+  // } else {
+  //   await sendText(
+  //     phone,
+  //     `For questions about LineUp services, contact +9495655311.`
+  //   );
+  // }
 };
 
 const send_almost_msg = async (rid, phone, restaurantName) => {
   if (rid == "kaiyuexuan" || rid == "spicycity") {
     await sendText(
       phone,
-      `Your table is almost ready at ${restaurantName}. Please return to the restaurant so the host can seat you soon. 您在${restaurantName}的餐桌即将准备就绪，请尽快到餐厅通知前台工作人员，期待您的光临！`
+      `Your table is almost ready at ${restaurantName}. Please return to the restaurant so the host can seat you soon. 您在${restaurantName}的餐桌即将准备就绪，请尽快回到餐厅门口等待，期待您的光临！`
     );
   } else {
     await sendText(
       phone,
       `Your table is almost ready at ${restaurantName}. Please return to the restaurant so the host can seat you soon.`
-    );
-  }
-};
-
-const send_front_msg = async (rid, phone, restaurantName) => {
-  if (rid == "kaiyuexuan" || rid == "spicycity") {
-    await sendText(
-      phone,
-      `Your table is ready at ${restaurantName}. Please checkin with the host so we can seat you as soon as possible. 您在${restaurantName}的餐桌已经准备就绪，请通知餐厅前台工作人员，祝您用餐愉快！`
-    );
-  } else {
-    await sendText(
-      phone,
-      `Your table is ready at ${restaurantName}. Please checkin with the host so we can seat you as soon as possible.`
     );
   }
 };
@@ -260,11 +246,8 @@ router.post("/addUser", async (req, res) => {
     await data.save();
     await restaurant.save();
     await send_init_msg(phone, name, restaurantName, user._id, rid);
-    if (index == 1) {
+    if (index <= 1) {
       await send_almost_msg(rid, phone, restaurantName);
-    }
-    if (index == 0) {
-      await send_front_msg(rid, phone, restaurantName);
     }
     await send_live_support(rid, phone);
     return res.status(200).send(user);
@@ -403,7 +386,7 @@ router.post("/removeUser", async (req, res) => {
     } else if (index == 0) {
       if (restaurant.waitlist.length > 0) {
         user = await User.findById(restaurant.waitlist[0].user);
-        await send_front_msg(rid, user.phone, restaurantName);
+        await send_almost_msg(rid, user.phone, restaurantName);
       }
       if (restaurant.waitlist.length > 1) {
         user = await User.findById(restaurant.waitlist[1].user);
@@ -480,7 +463,7 @@ router.post("/checkinUser", async (req, res) => {
     } else if (index == 0) {
       if (restaurant.waitlist.length > 0) {
         user = await User.findById(restaurant.waitlist[0].user);
-        await send_front_msg(rid, user.phone, restaurantName);
+        await send_almost_msg(rid, user.phone, restaurantName);
       }
       if (restaurant.waitlist.length > 1) {
         user = await User.findById(restaurant.waitlist[1].user);
@@ -558,7 +541,7 @@ router.post("/notifyUser", async (req, res) => {
       } else if (index == 0) {
         if (restaurant.waitlist.length > 0) {
           user = await User.findById(restaurant.waitlist[0].user);
-          await send_front_msg(rid, user.phone, restaurantName);
+          await send_almost_msg(rid, user.phone, restaurantName);
         }
         if (restaurant.waitlist.length > 1) {
           user = await User.findById(restaurant.waitlist[1].user);
@@ -812,9 +795,7 @@ router.post("/swapPosition", async (req, res) => {
     restaurant.waitlist[waitlistSellerIndex] = buyerInfo;
     restaurant.waitlist[waitlistBuyerIndex] = sellerInfo;
     const buyer = await User.findById(buyerId);
-    if (waitlistSellerIndex == 0) {
-      await send_front_msg(rid, buyer.phone, restaurant.name);
-    } else if (waitlistSellerIndex == 1) {
+    if (waitlistSellerIndex <= 1) {
       await send_almost_msg(rid, buyer.phone, restaurant.name);
     }
     await restaurant.save();
