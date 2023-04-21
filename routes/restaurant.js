@@ -246,7 +246,7 @@ router.post("/addUser", async (req, res) => {
     await data.save();
     await restaurant.save();
     await send_init_msg(phone, name, restaurantName, user._id, rid);
-    if (index <= 1) {
+    if (index == 1) {
       await send_almost_msg(rid, phone, restaurantName);
     }
     await send_live_support(rid, phone);
@@ -378,26 +378,12 @@ router.post("/removeUser", async (req, res) => {
       timestamp: Date.now(),
     });
     await restaurant.save();
-    if (index == 1) {
-      if (restaurant.waitlist.length > 1) {
-        user = await User.findById(restaurant.waitlist[1].user);
-        await send_almost_msg(rid, user.phone, restaurantName);
-      }
-    } else if (index == 0) {
-      if (restaurant.waitlist.length > 0) {
-        user = await User.findById(restaurant.waitlist[0].user);
-        await send_almost_msg(rid, user.phone, restaurantName);
-      }
+    if (index <= 1) {
       if (restaurant.waitlist.length > 1) {
         user = await User.findById(restaurant.waitlist[1].user);
         await send_almost_msg(rid, user.phone, restaurantName);
       }
     }
-    // if (index < 5) {
-    //   user = await User.findById(restaurant.waitlist[4].user);
-    //   await send_encourage_sell(user.phone);
-    // }
-
     return res.status(200).send(restaurant);
   } catch (err) {
     console.log(err);
@@ -455,16 +441,7 @@ router.post("/checkinUser", async (req, res) => {
       }
     }
     await restaurant.save();
-    if (index == 1) {
-      if (restaurant.waitlist.length > 1) {
-        user = await User.findById(restaurant.waitlist[1].user);
-        await send_almost_msg(rid, user.phone, restaurantName);
-      }
-    } else if (index == 0) {
-      if (restaurant.waitlist.length > 0) {
-        user = await User.findById(restaurant.waitlist[0].user);
-        await send_almost_msg(rid, user.phone, restaurantName);
-      }
+    if (index <= 1) {
       if (restaurant.waitlist.length > 1) {
         user = await User.findById(restaurant.waitlist[1].user);
         await send_almost_msg(rid, user.phone, restaurantName);
@@ -533,16 +510,7 @@ router.post("/notifyUser", async (req, res) => {
           restaurant.listings.splice(i, 1);
         }
       }
-      if (index == 1) {
-        if (restaurant.waitlist.length > 1) {
-          user = await User.findById(restaurant.waitlist[1].user);
-          await send_almost_msg(rid, user.phone, restaurantName);
-        }
-      } else if (index == 0) {
-        if (restaurant.waitlist.length > 0) {
-          user = await User.findById(restaurant.waitlist[0].user);
-          await send_almost_msg(rid, user.phone, restaurantName);
-        }
+      if (index <= 1) {
         if (restaurant.waitlist.length > 1) {
           user = await User.findById(restaurant.waitlist[1].user);
           await send_almost_msg(rid, user.phone, restaurantName);
