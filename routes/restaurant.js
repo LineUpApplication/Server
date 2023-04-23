@@ -38,17 +38,17 @@ const send_live_support = async (rid, phone) => {
 };
 
 const send_almost_msg = async (rid, phone, restaurantName) => {
-  if (rid == "kaiyuexuan" || rid == "spicycity") {
-    await sendText(
-      phone,
-      `Your table is almost ready at ${restaurantName}. Please return to the restaurant so the host can seat you soon. 您在${restaurantName}的餐桌即将准备就绪，请尽快回到餐厅门口等待，期待您的光临！`
-    );
-  } else {
-    await sendText(
-      phone,
-      `Your table is almost ready at ${restaurantName}. Please return to the restaurant so the host can seat you soon.`
-    );
-  }
+  // if (rid == "kaiyuexuan" || rid == "spicycity") {
+  //   await sendText(
+  //     phone,
+  //     `Your table is almost ready at ${restaurantName}. Please return to the restaurant so the host can seat you soon. 您在${restaurantName}的餐桌即将准备就绪，请尽快回到餐厅门口等待，期待您的光临！`
+  //   );
+  // } else {
+  //   await sendText(
+  //     phone,
+  //     `Your table is almost ready at ${restaurantName}. Please return to the restaurant so the host can seat you soon.`
+  //   );
+  // }
 };
 
 const send_notify_msg = async (rid, phone, restaurantName) => {
