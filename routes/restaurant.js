@@ -414,11 +414,6 @@ router.post("/checkinUser", async (req, res) => {
       actionType: Actions.CheckedIn,
       timestamp: Date.now(),
     });
-    const data = await Data.findById(userInfo.data);
-    const currentTime = new Date().getTime();
-    const joinedTime = data.createdAt.getTime();
-    data.actual = (currentTime - joinedTime) / MINUTE;
-    await data.save();
     // update(restaurant._id);
     user = await User.findById(_id);
     for (let i = 0; i < restaurant.listings.length; i++) {
@@ -441,6 +436,11 @@ router.post("/checkinUser", async (req, res) => {
       }
     }
     await restaurant.save();
+    const data = await Data.findById(userInfo.data);
+    const currentTime = new Date().getTime();
+    const joinedTime = data.createdAt.getTime();
+    data.actual = (currentTime - joinedTime) / MINUTE;
+    await data.save();
     if (index <= 1) {
       if (restaurant.waitlist.length > 1) {
         user = await User.findById(restaurant.waitlist[1].user);
