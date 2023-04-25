@@ -491,7 +491,7 @@ router.post("/notifyUser", async (req, res) => {
       // } catch (error) {
       //   console.log(error);
       // }
-    }, 15 * MINUTE);
+    }, 1 * MINUTE);
     return res.status(200).send(user);
   } catch (err) {
     console.log(err);
