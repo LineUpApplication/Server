@@ -517,7 +517,7 @@ router.post("/notifyUser", async (req, res) => {
       } catch (error) {
         console.log(error);
       }
-    }, 2 * MINUTE);
+    }, 1 * MINUTE);
     return res.status(200).send(restaurant);
   } catch (err) {
     console.log(err);
