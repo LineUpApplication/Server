@@ -484,14 +484,11 @@ router.post("/notifyUser", async (req, res) => {
     // Remove user after certain time
     setTimeout(async () => {
       let restaurant = await Restaurant.findOne({ rid: rid });
-      if (!restaurant) {
-        return res.status(400).send("Restaurant does not exists.");
-      }
       const index = restaurant.waitlist
         .map((userInfo) => userInfo.user.toString())
         .indexOf(user._id.toString());
       if (index < 0) {
-        return res.status(400).send("User not in waitlist.");
+        return;
       }
       const userInfo = restaurant.waitlist.splice(index, 1)[0];
       restaurant.historyList.push({
