@@ -484,11 +484,14 @@ router.post("/notifyUser", async (req, res) => {
     // Remove user after certain time
     setTimeout(async () => {
       let restaurant = await Restaurant.findOne({ rid: rid });
+      if (!restaurant) {
+        return res.status(400).send("Restaurant does not exists.");
+      }
       const index = restaurant.waitlist
         .map((userInfo) => userInfo.user.toString())
         .indexOf(user._id.toString());
       if (index < 0) {
-        return;
+        return res.status(400).send("User not in waitlist.");
       }
       const userInfo = restaurant.waitlist.splice(index, 1)[0];
       restaurant.historyList.push({
@@ -513,7 +516,7 @@ router.post("/notifyUser", async (req, res) => {
           await send_almost_msg(rid, user.phone, restaurantName);
         }
       }
-    }, 1 * MINUTE);
+    }, 5 * MINUTE);
     return res.status(200).send(restaurant);
   } catch (err) {
     console.log(err);
