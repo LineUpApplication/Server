@@ -492,7 +492,7 @@ router.post("/notifyUser", async (req, res) => {
       //   console.log(error);
       // }
     }, 15 * MINUTE);
-    return res.status(200);
+    return res.status(200).send(user);
   } catch (err) {
     console.log(err);
     return res.status(400).send("Failed to notify user: " + err);
