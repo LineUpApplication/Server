@@ -516,7 +516,7 @@ router.post("/notifyUser", async (req, res) => {
           await send_almost_msg(rid, user.phone, restaurantName);
         }
       }
-    }, 15 * MINUTE);
+    }, 1 * MINUTE);
     return res.status(200).send(restaurant);
   } catch (err) {
     console.log(err);
