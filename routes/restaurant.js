@@ -489,7 +489,7 @@ router.post("/notifyUser", async (req, res) => {
           .map((userInfo) => userInfo.user.toString())
           .indexOf(user._id.toString());
         if (index < 0) {
-          return;
+          return res.status(400).send("User not in waitlist.");
         }
         const userInfo = restaurant.waitlist.splice(index, 1)[0];
         restaurant.historyList.push({
@@ -517,7 +517,7 @@ router.post("/notifyUser", async (req, res) => {
       } catch (error) {
         console.log(error);
       }
-    }, 15 * MINUTE);
+    }, 2 * MINUTE);
     return res.status(200).send(restaurant);
   } catch (err) {
     console.log(err);
