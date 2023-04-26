@@ -30,8 +30,8 @@ const RestaurantSchema = new mongoose.Schema({
       },
       notified: {
         type: Boolean,
-        default: false
-      }
+        default: false,
+      },
     },
   ],
   historyList: [
@@ -57,18 +57,13 @@ const RestaurantSchema = new mongoose.Schema({
         type: mongoose.Schema.Types.ObjectId,
         ref: "User",
       },
-      payment: {
-        type: {
-          type: String,
-        },
-        info: {
-          type: String,
-        },
+      stripeId: {
+        type: String,
       },
       price: {
         type: Number,
       },
-      bought: {
+      taken: {
         type: Boolean,
       },
     },

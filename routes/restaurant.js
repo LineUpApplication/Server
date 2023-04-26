@@ -8,6 +8,8 @@ import { sendText } from "../utils/twilio.js";
 import bcrypt from "bcrypt";
 import { generateAuthToken } from "../models/Restaurant.js";
 import { Actions } from "../utils/actionTypes.js";
+import axios from "axios";
+import { sendPayment } from "../utils/stripe.js";
 
 const router = express.Router();
 const send_init_msg = async (phone, name, restaurantName, userId, rid) => {
@@ -86,7 +88,7 @@ const send_pay_now_msg = async (phone, name, payment, amount) => {
   );
 };
 
-const send_position_bought_msg = async (phone, restaurant, position) => {
+const send_position_sold_msg = async (phone, restaurant, position) => {
   if (rid == "kaiyuexuan" || rid == "spicycity") {
     await sendText(
       phone,
@@ -97,6 +99,18 @@ const send_position_bought_msg = async (phone, restaurant, position) => {
       phone,
       `Your position at ${restaurant} has been sold, you have been moved to position ${position}, you will receive your payment once you've checked in at the restaurant.`
     );
+  }
+}
+
+const send_position_bought_msg = async (phone, restaurant, position) => {
+  if (rid == "kaiyuexuan" || rid == "spicycity") {
+    await sendText(
+    phone,
+    `Someone has taken your request to swap position at ${restaurant}, you have been moved to position ${position}, enjoy! 有人同意了您在${restaurant}餐厅交换等候名单位置的请求，您当前在队列中排第${position}位。祝您用餐愉快！`
+  ); } else {
+    await sendText(
+      phone,
+      `Someone has taken your request to swap position at ${restaurant}, you have been moved to position ${position}, enjoy!`);
   }
 };
 
@@ -425,10 +439,11 @@ router.post("/checkinUser", async (req, res) => {
     const joinedTime = data.createdAt.getTime();
     data.actual = (currentTime - joinedTime) / MINUTE;
     await data.save();
+    await restaurant.save();
     if (index <= 1) {
       if (restaurant.waitlist.length > 1) {
         const user = await User.findById(restaurant.waitlist[1].user);
-        await send_almost_msg(rid, user.phone, restaurantName);
+        await send_almost_msg(user.phone, restaurantName);
       }
     }
     return res.status(200).send(restaurant);
@@ -685,7 +700,7 @@ router.get("/getListings/:rid", async (req, res) => {
 
 router.post("/listPosition", async (req, res) => {
   try {
-    const { rid, id, price, payment } = req.body;
+    const { rid, id, price, stripeId } = req.body;
     const restaurant = await Restaurant.findOne({ rid: rid });
     if (!restaurant) {
       return res.status(400).send("Restaurant does not exists.");
@@ -702,8 +717,8 @@ router.post("/listPosition", async (req, res) => {
     const listing = {
       user: id,
       price: price,
-      bought: false,
-      payment: payment,
+      taken: false,
+      stripeId: stripeId,
     };
     if (listingIndex < 0) {
       restaurant.listings.push(listing);
@@ -720,16 +735,20 @@ router.post("/listPosition", async (req, res) => {
 
 router.post("/swapPosition", async (req, res) => {
   try {
-    const { buyerId, sellerId } = req.body.swapInfo;
+    const { buyerId, sellerId, payment } = req.body.swapInfo;
     const { rid } = req.body.restaurant;
     let restaurant = await Restaurant.findOne({ rid: rid });
     const listingIndex = restaurant.listings
       .map((listingInfo) => listingInfo.user.toString())
-      .indexOf(sellerId);
-    if (listingIndex < 0 || restaurant.listings[listingIndex].bought) {
+      .indexOf(buyerId);
+    if (listingIndex < 0 || restaurant.listings[listingIndex].taken) {
       return res.status(400).send("Listing not found.");
     } else {
-      restaurant.listings[listingIndex].bought = true;
+      await sendPayment(
+        restaurant.listings[listingIndex].price,
+        restaurant.listings[listingIndex].stripeId
+      );
+      restaurant.listings[listingIndex].taken = true;
     }
     const waitlistSellerIndex = restaurant.waitlist
       .map((userInfo) => userInfo.user.toString())
@@ -753,11 +772,33 @@ router.post("/swapPosition", async (req, res) => {
     }
     await restaurant.save();
     const seller = await User.findById(sellerId);
+    if (waitlistSellerIndex == 0) {
+      await send_front_msg(buyer.phone, restaurant.name);
+    } else if (waitlistSellerIndex == 1) {
+      await send_almost_msg(buyer.phone, restaurant.name);
+    }
+    await restaurant.save();
     await send_position_bought_msg(
-      rid,
+      buyer.phone,
+      restaurant.name,
+      waitlistSellerIndex + 1
+    );
+    await send_position_sold_msg(
       seller.phone,
       restaurant.name,
       waitlistBuyerIndex + 1
+    );
+    await send_pay_now_msg(
+      "9495298312",
+      seller.name,
+      payment,
+      restaurant.listings[i].price
+    );
+    await send_pay_now_msg(
+      "9495655311",
+      seller.name,
+      payment,
+      restaurant.listings[i].price
     );
     return res.status(200).send(restaurant.waitlist);
   } catch (error) {
