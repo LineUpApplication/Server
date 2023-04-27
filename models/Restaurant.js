@@ -48,12 +48,16 @@ const RestaurantSchema = new mongoose.Schema({
       },
       timestamp: {
         type: Date,
-      }
+      },
     },
   ],
   listings: [
     {
-      user: {
+      seller: {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: "User",
+      },
+      buyer: {
         type: mongoose.Schema.Types.ObjectId,
         ref: "User",
       },

@@ -81,39 +81,6 @@ const send_removed_msg = async (rid, phone, restaurantName) => {
   }
 };
 
-const send_pay_now_msg = async (phone, name, payment, amount) => {
-  await sendText(
-    phone,
-    `${name} has sold their position for $${amount} and sucessfully checked in. ${payment.type}: ${payment.info}`
-  );
-};
-
-const send_position_sold_msg = async (phone, restaurant, position) => {
-  if (rid == "kaiyuexuan" || rid == "spicycity") {
-    await sendText(
-      phone,
-      `Your position at ${restaurant} has been sold, you have been moved to position ${position}, you will receive your payment once you've checked in at the restaurant. 您在${restaurant}餐厅等候名单中出售的位置已经售出，您当前在队列中排第${position}位。您会于30分钟之内收到此次交易的首款。`
-    );
-  } else {
-    await sendText(
-      phone,
-      `Your position at ${restaurant} has been sold, you have been moved to position ${position}, you will receive your payment once you've checked in at the restaurant.`
-    );
-  }
-}
-
-const send_position_bought_msg = async (phone, restaurant, position) => {
-  if (rid == "kaiyuexuan" || rid == "spicycity") {
-    await sendText(
-    phone,
-    `Someone has taken your request to swap position at ${restaurant}, you have been moved to position ${position}, enjoy! 有人同意了您在${restaurant}餐厅交换等候名单位置的请求，您当前在队列中排第${position}位。祝您用餐愉快！`
-  ); } else {
-    await sendText(
-      phone,
-      `Someone has taken your request to swap position at ${restaurant}, you have been moved to position ${position}, enjoy!`);
-  }
-};
-
 // const send_encourage_sell = async (phone) => {
 //   await sendText(
 //     phone,
@@ -306,7 +273,6 @@ router.post("/updateUser", async (req, res) => {
       partyReady: false,
       data: data._id,
     };
-    await data.save();
     await restaurant.save();
     return res.status(200).send(user);
   } catch (err) {
@@ -380,7 +346,12 @@ router.post("/removeUser", async (req, res) => {
     await send_removed_msg(rid, user.phone, restaurantName);
     restaurant.removeCount += 1;
     for (let i = 0; i < restaurant.listings.length; i++) {
-      if (restaurant.listings[i].user._id === user._id) {
+      if (
+        (restaurant.listings[i].taken &&
+          restaurant.listings[i].seller._id === userInfo.user) ||
+        (!restaurant.listings[i].taken &&
+          restaurant.listings[i].buyer._id === userInfo.user)
+      ) {
         restaurant.listings.splice(i, 1);
       }
     }
@@ -390,7 +361,7 @@ router.post("/removeUser", async (req, res) => {
       actionType: Actions.Removed,
       timestamp: Date.now(),
     });
-    if (restaurant.waitlist.length > 20) {
+    if (restaurant.historyList.length > 20) {
       restaurant.historyList.pop();
     }
     await restaurant.save();
@@ -430,8 +401,18 @@ router.post("/checkinUser", async (req, res) => {
       actionType: Actions.CheckedIn,
       timestamp: Date.now(),
     });
-    if (restaurant.waitlist.length > 20) {
+    if (restaurant.historyList.length > 20) {
       restaurant.historyList.pop();
+    }
+    for (let i = 0; i < restaurant.listings.length; i++) {
+      if (
+        (restaurant.listings[i].taken &&
+          restaurant.listings[i].seller._id === userInfo.user) ||
+        (!restaurant.listings[i].taken &&
+          restaurant.listings[i].buyer._id === userInfo.user)
+      ) {
+        restaurant.listings.splice(i, 1);
+      }
     }
     await restaurant.save();
     const data = await Data.findById(userInfo.data);
@@ -494,13 +475,23 @@ router.post("/notifyUser", async (req, res) => {
           actionType: Actions.Removed,
           timestamp: Date.now(),
         });
-        if (restaurant.waitlist.length > 20) {
+        if (restaurant.historyList.length > 20) {
           restaurant.historyList.pop();
         }
         await Data.deleteOne({ _id: userInfo.data });
         user = await User.findById(_id);
         await send_removed_msg(rid, user.phone, restaurantName);
         restaurant.removeCount += 1;
+        for (let i = 0; i < restaurant.listings.length; i++) {
+          if (
+            (restaurant.listings[i].taken &&
+              restaurant.listings[i].seller._id === user._id) ||
+            (!restaurant.listings[i].taken &&
+              restaurant.listings[i].buyer._id === user._id)
+          ) {
+            restaurant.listings.splice(i, 1);
+          }
+        }
         await restaurant.save();
         for (let i = 0; i < restaurant.listings.length; i++) {
           if (restaurant.listings[i].user._id === user._id) {
@@ -676,170 +667,8 @@ router.post("/setPartyReady", async (req, res) => {
   }
 });
 
-router.get("/getListings/:rid", async (req, res) => {
-  try {
-    const rid = req.params.rid;
-    const restaurant = await Restaurant.findOne({ rid: rid });
-    let result = [];
-    restaurant.listings = restaurant.listings.filter((listingInfo) => {
-      const index = restaurant.waitlist
-        .map((userInfo) => userInfo.user.toString())
-        .indexOf(listingInfo.user.toString());
-      if (index >= 0) {
-        result.push({ ...listingInfo, place: index + 1 });
-      }
-      return index >= 0;
-    });
-    await restaurant.save();
-    result.sort((listingInfo) => listingInfo.place);
-    return res.status(200).send(result);
-  } catch (error) {
-    return res.status(400).send(error);
-  }
-});
-
-router.post("/listPosition", async (req, res) => {
-  try {
-    const { rid, id, price, stripeId } = req.body;
-    const restaurant = await Restaurant.findOne({ rid: rid });
-    if (!restaurant) {
-      return res.status(400).send("Restaurant does not exists.");
-    }
-    const waitlistIndex = restaurant.waitlist
-      .map((userInfo) => userInfo.user.toString())
-      .indexOf(id);
-    if (waitlistIndex < 0) {
-      return res.status(400).send("User not in waitlist.");
-    }
-    const listingIndex = restaurant.listings
-      .map((listingInfo) => listingInfo.user.toString())
-      .indexOf(id);
-    const listing = {
-      user: id,
-      price: price,
-      taken: false,
-      stripeId: stripeId,
-    };
-    if (listingIndex < 0) {
-      restaurant.listings.push(listing);
-    } else {
-      restaurant.listings[listingIndex] = listing;
-    }
-    await restaurant.save();
-    return res.status(200).send(restaurant.listings);
-  } catch (error) {
-    console.log(error);
-    return res.status(400).send(error);
-  }
-});
-
-router.post("/swapPosition", async (req, res) => {
-  try {
-    const { buyerId, sellerId, payment } = req.body.swapInfo;
-    const { rid } = req.body.restaurant;
-    let restaurant = await Restaurant.findOne({ rid: rid });
-    const listingIndex = restaurant.listings
-      .map((listingInfo) => listingInfo.user.toString())
-      .indexOf(buyerId);
-    if (listingIndex < 0 || restaurant.listings[listingIndex].taken) {
-      return res.status(400).send("Listing not found.");
-    } else {
-      await sendPayment(
-        restaurant.listings[listingIndex].price,
-        restaurant.listings[listingIndex].stripeId
-      );
-      restaurant.listings[listingIndex].taken = true;
-    }
-    const waitlistSellerIndex = restaurant.waitlist
-      .map((userInfo) => userInfo.user.toString())
-      .indexOf(sellerId);
-    if (waitlistSellerIndex < 0) {
-      return res.status(400).send("Seller not in waitlist.");
-    }
-    const waitlistBuyerIndex = restaurant.waitlist
-      .map((userInfo) => userInfo.user.toString())
-      .indexOf(buyerId);
-    if (waitlistBuyerIndex < 0) {
-      return res.status(400).send("Buyer not in waitlist.");
-    }
-    const sellerInfo = restaurant.waitlist[waitlistSellerIndex];
-    const buyerInfo = restaurant.waitlist[waitlistBuyerIndex];
-    restaurant.waitlist[waitlistSellerIndex] = buyerInfo;
-    restaurant.waitlist[waitlistBuyerIndex] = sellerInfo;
-    const buyer = await User.findById(buyerId);
-    if (waitlistSellerIndex <= 1) {
-      await send_almost_msg(rid, buyer.phone, restaurant.name);
-    }
-    await restaurant.save();
-    const seller = await User.findById(sellerId);
-    if (waitlistSellerIndex == 0) {
-      await send_front_msg(buyer.phone, restaurant.name);
-    } else if (waitlistSellerIndex == 1) {
-      await send_almost_msg(buyer.phone, restaurant.name);
-    }
-    await restaurant.save();
-    await send_position_bought_msg(
-      buyer.phone,
-      restaurant.name,
-      waitlistSellerIndex + 1
-    );
-    await send_position_sold_msg(
-      seller.phone,
-      restaurant.name,
-      waitlistBuyerIndex + 1
-    );
-    await send_pay_now_msg(
-      "9495298312",
-      seller.name,
-      payment,
-      restaurant.listings[i].price
-    );
-    await send_pay_now_msg(
-      "9495655311",
-      seller.name,
-      payment,
-      restaurant.listings[i].price
-    );
-    return res.status(200).send(restaurant.waitlist);
-  } catch (error) {
-    console.log(error);
-    return res.status(400).send(error);
-  }
-});
-
-router.post("/unlistPosition", async (req, res) => {
-  try {
-    const { rid, id } = req.body;
-    const restaurant = await Restaurant.findOne({ rid: rid });
-    const listingIndex = restaurant.listings
-      .map((listingInfo) => listingInfo.user.toString())
-      .indexOf(id);
-    if (listingIndex < 0) {
-      return res.status(400).send("User not in listing");
-    } else {
-      restaurant.listings.splice(listingIndex, 1);
-    }
-    let result = [];
-    restaurant.listings = restaurant.listings.filter((listingInfo) => {
-      const index = restaurant.waitlist
-        .map((userInfo) => userInfo.user.toString())
-        .indexOf(listingInfo.user.toString());
-      if (index >= 0) {
-        result.push({ ...listingInfo, place: index + 1 });
-      }
-      return index >= 0;
-    });
-    await restaurant.save();
-    result.sort((listingInfo) => listingInfo.place);
-    return res.status(200).send(result);
-  } catch (error) {
-    return res.status(400).send(error);
-  }
-});
-
 router.get("/history/:rid", async (req, res) => {
   try {
-    const bruh = new Date().getTime();
     const rid = req.params.rid;
     const restaurant = await Restaurant.findOne({ rid: rid });
     const historyList = await Promise.all(
@@ -853,7 +682,6 @@ router.get("/history/:rid", async (req, res) => {
         };
       })
     );
-    console.log(new Date().getTime() - bruh);
     return res.status(200).send(historyList);
   } catch (err) {
     console.log("Failed to get restaurant: " + err);
