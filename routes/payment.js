@@ -1,5 +1,5 @@
 import express from "express";
-import { sendPayment } from "../utils/stripe";
+import { sendPayment } from "../utils/stripe.js";
 
 const router = express.Router();
 
