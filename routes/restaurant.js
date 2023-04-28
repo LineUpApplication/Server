@@ -366,7 +366,7 @@ router.post("/removeUser", async (req, res) => {
     await send_removed_msg(rid, user.phone, restaurantName);
     restaurant.removeCount += 1;
     for (let i = 0; i < restaurant.listings.length; i++) {
-      if (restaurant.listings[i].user._id === user._id) {
+      if (restaurant.listings[i].user && restaurant.listings[i].user._id === user._id) {
         restaurant.listings.splice(i, 1);
       }
     }
@@ -488,7 +488,7 @@ router.post("/notifyUser", async (req, res) => {
         restaurant.removeCount += 1;
         await restaurant.save();
         for (let i = 0; i < restaurant.listings.length; i++) {
-          if (restaurant.listings[i].user._id === user._id) {
+          if (restaurant.listings[i].user && restaurant.listings[i].user._id === user._id) {
             restaurant.listings.splice(i, 1);
           }
         }
