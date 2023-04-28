@@ -81,19 +81,12 @@ const send_removed_msg = async (rid, phone, restaurantName) => {
   }
 };
 
-// const send_encourage_sell = async (phone) => {
-//   await sendText(
-//     phone,
-//     `You are near the front of the line! If you are okay with getting seated later, list your party's position for sale!`
-//   );
-// };
-
-// const send_encourage_buy = async (phone) => {
-//   await sendText(
-//     phone,
-//     `You can swap positions with parties that are selling their spot in line, checkout the marketplace for position listings.`
-//   );
-// };
+const send_encourage_sell = async (phone, rid, userId) => {
+  await sendText(
+    phone,
+    `You are near the front of the line! If you are okay with getting seated later, checkout the swap requests at https://line-up-usersite.herokuapp.com/${rid}/${userId}/en and get paid to wait a little longer!`
+  );
+};
 
 const MINUTE = 60000;
 
@@ -229,6 +222,12 @@ router.post("/addUser", async (req, res) => {
     await send_init_msg(phone, name, restaurantName, user._id, rid);
     if (index == 1) {
       await send_almost_msg(rid, phone, restaurantName);
+    }
+    if (
+      (restaurant.listings.length && restaurant.waitlist.length < 5) ||
+      index == 4
+    ) {
+      await send_encourage_sell(phone, rid, user._id);
     }
     await send_live_support(rid, phone);
     return res.status(200).send(user);
@@ -372,6 +371,12 @@ router.post("/removeUser", async (req, res) => {
         await send_almost_msg(rid, user.phone, restaurantName);
       }
     }
+    if (restaurant.listings.length && index <= 4) {
+      if (restaurant.waitlist.length >= 5) {
+        user = await User.findById(restaurant.waitlist[4].user);
+        await send_encourage_sell(phone, rid, user._id);
+      }
+    }
     return res.status(200).send(restaurant);
   } catch (err) {
     console.log(err);
@@ -425,6 +430,12 @@ router.post("/checkinUser", async (req, res) => {
       if (restaurant.waitlist.length > 1) {
         const user = await User.findById(restaurant.waitlist[1].user);
         await send_almost_msg(user.phone, restaurantName);
+      }
+    }
+    if (restaurant.listings.length && index <= 4) {
+      if (restaurant.waitlist.length >= 5) {
+        const user = await User.findById(restaurant.waitlist[4].user);
+        await send_encourage_sell(phone, rid, user._id);
       }
     }
     return res.status(200).send(restaurant);
@@ -504,6 +515,12 @@ router.post("/notifyUser", async (req, res) => {
             await send_almost_msg(rid, user.phone, restaurantName);
           }
         }
+        if (restaurant.listings.length && index <= 4) {
+          if (restaurant.waitlist.length >= 5) {
+            const user = await User.findById(restaurant.waitlist[4].user);
+            await send_encourage_sell(phone, rid, user._id);
+          }
+        }
       } catch (error) {
         console.log(error);
       }
@@ -512,108 +529,6 @@ router.post("/notifyUser", async (req, res) => {
   } catch (err) {
     console.log(err);
     return res.status(400).send("Failed to notify user: " + err);
-  }
-});
-
-router.get("/linepassCount/:rid", async (req, res) => {
-  try {
-    const rid = req.params.rid;
-    let restaurant = await Restaurant.findOne({ rid: rid });
-    if (!restaurant) {
-      return res.status(400).send("Restaurant does not exists.");
-    }
-    return res.status(200).send({ linepassCount: restaurant.linepassCount });
-  } catch (error) {
-    console.log(error);
-    return res.status(400).send(error);
-  }
-});
-
-router.post("/setLinepassCount", async (req, res) => {
-  try {
-    const { rid, linepassCount } = req.body.restaurant;
-    let restaurant = await Restaurant.findOne({ rid: rid });
-    if (!restaurant) {
-      return res.status(400).send("Restaurant does not exists.");
-    }
-    restaurant.linepassCount = linepassCount;
-    await restaurant.save();
-    return res.status(200).send({ linepassCount: restaurant.linepassCount });
-  } catch (error) {
-    console.log(error);
-    return res.status(400).send(error);
-  }
-});
-
-router.get("/isLinepassActivated/:rid", async (req, res) => {
-  try {
-    const rid = req.params.rid;
-    let restaurant = await Restaurant.findOne({ rid: rid });
-    if (!restaurant) {
-      return res.status(400).send("Restaurant does not exists.");
-    }
-    return res
-      .status(200)
-      .send({ linepassActivated: restaurant.linepassActivated });
-  } catch (error) {
-    console.log(error);
-    return res.status(400).send(error);
-  }
-});
-
-router.post("/setLinepassActivated", async (req, res) => {
-  try {
-    const { rid, linepassActivated } = req.body.restaurant;
-    let restaurant = await Restaurant.findOne({ rid: rid });
-    if (!restaurant) {
-      return res.status(400).send("Restaurant does not exists.");
-    }
-    restaurant.linepassActivated = linepassActivated;
-    await restaurant.save();
-    return res
-      .status(200)
-      .send({ linepassActivated: restaurant.linepassActivated });
-  } catch (error) {
-    console.log(error);
-    return res.status(400).send(error);
-  }
-});
-
-router.get("/linepassTimeSaving/:rid/:id", async (req, res) => {
-  try {
-    const { rid, id } = req.params;
-    let restaurant = await Restaurant.findOne({ rid: rid });
-    if (!restaurant) {
-      return res.status(400).send("Restaurant does not exists.");
-    }
-    let user = await User.findById(id);
-    if (!user) {
-      return res.status(400).send("User does not exists.");
-    }
-    const index = restaurant.waitlist
-      .map((userInfo) => userInfo.user.toString())
-      .indexOf(user._id.toString());
-    if (index < 0) {
-      return res.status(400).send("User not in waitlist.");
-    }
-    const userInfo = restaurant.waitlist[index];
-    const oldEstimatedWait = await predict(
-      userInfo.partySize,
-      index,
-      restaurant._id
-    );
-    const newEstimatedWait = await predict(
-      userInfo.partySize,
-      1,
-      restaurant._id
-    );
-    return res.status(200).send({
-      timeSaving: oldEstimatedWait - newEstimatedWait,
-      newEstimatedWait: newEstimatedWait,
-    });
-  } catch (error) {
-    console.log(error);
-    return res.status(400).send(error);
   }
 });
 
