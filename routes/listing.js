@@ -6,13 +6,6 @@ import { sendPayment } from "../utils/stripe.js";
 
 const router = express.Router();
 
-const send_pay_now_msg = async (phone, name, payment, amount) => {
-  await sendText(
-    phone,
-    `${name} has sold their position for $${amount} and sucessfully checked in. ${payment.type}: ${payment.info}`
-  );
-};
-
 const send_position_sold_msg = async (rid, phone, restaurant, position) => {
   if (rid == "kaiyuexuan" || rid == "spicycity") {
     await sendText(
@@ -69,7 +62,7 @@ router.post("/listPosition", async (req, res) => {
       return res.status(400).send("User not in waitlist.");
     }
     const listingIndex = restaurant.listings
-      .map((listingInfo) => listingInfo.user.toString())
+      .map((listingInfo) => listingInfo.buyer.toString())
       .indexOf(id);
     const listing = {
       buyer: id,
@@ -145,18 +138,6 @@ router.post("/swapPosition", async (req, res) => {
       restaurant.name,
       waitlistBuyerIndex + 1
     );
-    await send_pay_now_msg(
-      "9495298312",
-      seller.name,
-      payment,
-      restaurant.listings[listingIndex].price
-    );
-    await send_pay_now_msg(
-      "9495655311",
-      seller.name,
-      payment,
-      restaurant.listings[listingIndex].price
-    );
     return res.status(200).send(restaurant.waitlist);
   } catch (error) {
     console.log(error);
@@ -176,20 +157,16 @@ router.post("/unlistPosition", async (req, res) => {
     } else {
       restaurant.listings.splice(listingIndex, 1);
     }
-    let result = [];
     restaurant.listings = restaurant.listings.filter((listingInfo) => {
       const index = restaurant.waitlist
         .map((userInfo) => userInfo.user.toString())
-        .indexOf(listingInfo.user.toString());
-      if (index >= 0) {
-        result.push({ ...listingInfo, place: index + 1 });
-      }
-      return !listingInfo.taken && index >= 0;
+        .indexOf(listingInfo.buyer.toString());
+      return index >= 0;
     });
     await restaurant.save();
-    result.sort((listingInfo) => listingInfo.place);
-    return res.status(200).send(result);
+    return res.status(200);
   } catch (error) {
+    console.log(error)
     return res.status(400).send(error);
   }
 });

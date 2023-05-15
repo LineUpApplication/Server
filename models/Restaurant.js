@@ -64,6 +64,14 @@ const RestaurantSchema = new mongoose.Schema({
       stripeId: {
         type: String,
       },
+      payment: {
+        type: {
+          type: String,
+        },
+        info: {
+          type: String,
+        },
+      },
       price: {
         type: Number,
       },

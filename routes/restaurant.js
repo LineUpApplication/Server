@@ -84,7 +84,14 @@ const send_removed_msg = async (rid, phone, restaurantName) => {
 const send_encourage_sell = async (phone, rid, userId) => {
   await sendText(
     phone,
-    `You are near the front of the line! If you are okay with getting seated later, checkout the swap requests at https://line-up-usersite.herokuapp.com/${rid}/${userId}/en and get paid to wait a little longer!`
+    `You are near the front of the line! If you are okay with getting seated later, checkout the swap requests at https://line-up-usersite.herokuapp.com/${rid}/${userId}/en/linemarket and get paid to wait a little longer!`
+  );
+};
+
+const send_pay_now_msg = async (phone, name, payment, amount) => {
+  await sendText(
+    phone,
+    `${name} has sold their position for $${amount} and sucessfully checked in. ${payment.type}: ${payment.info}`
   );
 };
 
@@ -347,9 +354,9 @@ router.post("/removeUser", async (req, res) => {
     for (let i = 0; i < restaurant.listings.length; i++) {
       if (
         (restaurant.listings[i].taken &&
-          restaurant.listings[i].seller._id === userInfo.user) ||
+          restaurant.listings[i].seller._id.toString() === userInfo.user.toString()) ||
         (!restaurant.listings[i].taken &&
-          restaurant.listings[i].buyer._id === userInfo.user)
+          restaurant.listings[i].buyer._id.toString() === userInfo.user.toString())
       ) {
         restaurant.listings.splice(i, 1);
       }
@@ -361,7 +368,7 @@ router.post("/removeUser", async (req, res) => {
       timestamp: Date.now(),
     });
     if (restaurant.historyList.length > 20) {
-      restaurant.historyList.pop();
+      restaurant.historyList = restaurant.historyList.slice(0, 20);
     }
     await restaurant.save();
     await Data.deleteOne({ _id: userInfo.data });
@@ -374,7 +381,7 @@ router.post("/removeUser", async (req, res) => {
     if (restaurant.listings.length && index <= 4) {
       if (restaurant.waitlist.length >= 5) {
         user = await User.findById(restaurant.waitlist[4].user);
-        await send_encourage_sell(phone, rid, user._id);
+        await send_encourage_sell(user.phone, rid, user._id);
       }
     }
     return res.status(200).send(restaurant);
@@ -407,14 +414,30 @@ router.post("/checkinUser", async (req, res) => {
       timestamp: Date.now(),
     });
     if (restaurant.historyList.length > 20) {
-      restaurant.historyList.pop();
+      restaurant.historyList = restaurant.historyList.slice(0, 20);
     }
     for (let i = 0; i < restaurant.listings.length; i++) {
       if (
-        (restaurant.listings[i].taken &&
-          restaurant.listings[i].seller._id === userInfo.user) ||
-        (!restaurant.listings[i].taken &&
-          restaurant.listings[i].buyer._id === userInfo.user)
+        restaurant.listings[i].taken &&
+        restaurant.listings[i].seller._id.toString() === userInfo.user.toString()
+      ) {
+        const seller = await User.findById(userInfo.user);
+        await send_pay_now_msg(
+          "9495298312",
+          seller.name,
+          restaurant.listings[i].payment,
+          restaurant.listings[i].price
+        );
+        await send_pay_now_msg(
+          "9495655311",
+          seller.name,
+          restaurant.listings[i].payment,
+          restaurant.listings[i].price
+        );
+        restaurant.listings.splice(i, 1);
+      } else if (
+        !restaurant.listings[i].taken &&
+        restaurant.listings[i].buyer._id.toString() === userInfo.user.toString()
       ) {
         restaurant.listings.splice(i, 1);
       }
@@ -435,7 +458,7 @@ router.post("/checkinUser", async (req, res) => {
     if (restaurant.listings.length && index <= 4) {
       if (restaurant.waitlist.length >= 5) {
         const user = await User.findById(restaurant.waitlist[4].user);
-        await send_encourage_sell(phone, rid, user._id);
+        await send_encourage_sell(user.phone, rid, user._id);
       }
     }
     return res.status(200).send(restaurant);
@@ -487,7 +510,7 @@ router.post("/notifyUser", async (req, res) => {
           timestamp: Date.now(),
         });
         if (restaurant.historyList.length > 20) {
-          restaurant.historyList.pop();
+          restaurant.historyList = restaurant.historyList.slice(0, 20);
         }
         await Data.deleteOne({ _id: userInfo.data });
         user = await User.findById(_id);
