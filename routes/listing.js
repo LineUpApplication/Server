@@ -116,6 +116,7 @@ router.post("/swapPosition", async (req, res) => {
     );
     restaurant.listings[listingIndex].taken = true;
     restaurant.listings[listingIndex].seller = sellerId;
+    restaurant.listings[listingIndex].payment = payment;
 
     await restaurant.save();
     const buyer = await User.findById(buyerId);
