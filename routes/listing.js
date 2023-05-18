@@ -110,10 +110,10 @@ router.post("/swapPosition", async (req, res) => {
     const buyerInfo = restaurant.waitlist[waitlistBuyerIndex];
     restaurant.waitlist[waitlistSellerIndex] = buyerInfo;
     restaurant.waitlist[waitlistBuyerIndex] = sellerInfo;
-    // await sendPayment(
-    //   restaurant.listings[listingIndex].price * 100,
-    //   restaurant.listings[listingIndex].stripeId
-    // );
+    await sendPayment(
+      restaurant.listings[listingIndex].price * 100,
+      restaurant.listings[listingIndex].stripeId
+    );
     restaurant.listings[listingIndex].taken = true;
     restaurant.listings[listingIndex].seller = sellerId;
     restaurant.listings[listingIndex].payment = payment;
