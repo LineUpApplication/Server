@@ -82,10 +82,12 @@ const send_removed_msg = async (rid, phone, restaurantName) => {
 };
 
 const send_encourage_sell = async (phone, rid, userId) => {
-  await sendText(
-    phone,
-    `You are near the front of the line! If you are okay with getting seated later, checkout the swap requests at https://line-up-usersite.herokuapp.com/${rid}/${userId}/en/linemarket and get paid to wait a little longer!`
-  );
+  if (rid === "test") {
+    await sendText(
+      phone,
+      `You are near the front of the line! If you are okay with getting seated later, checkout the swap requests at https://line-up-usersite.herokuapp.com/${rid}/${userId}/en/linemarket and get paid to wait a little longer!`
+    );
+  }
 };
 
 const send_pay_now_msg = async (phone, name, payment, amount) => {
@@ -231,8 +233,8 @@ router.post("/addUser", async (req, res) => {
       await send_almost_msg(rid, phone, restaurantName);
     }
     if (
-      (restaurant.listings.length && restaurant.waitlist.length < 5) ||
-      index == 4
+      restaurant.listings.length &&
+      (restaurant.waitlist.length < 5 || index == 4)
     ) {
       await send_encourage_sell(phone, rid, user._id);
     }
@@ -354,9 +356,11 @@ router.post("/removeUser", async (req, res) => {
     for (let i = 0; i < restaurant.listings.length; i++) {
       if (
         (restaurant.listings[i].taken &&
-          restaurant.listings[i].seller._id.toString() === userInfo.user.toString()) ||
+          restaurant.listings[i].seller._id.toString() ===
+            userInfo.user.toString()) ||
         (!restaurant.listings[i].taken &&
-          restaurant.listings[i].buyer._id.toString() === userInfo.user.toString())
+          restaurant.listings[i].buyer._id.toString() ===
+            userInfo.user.toString())
       ) {
         restaurant.listings.splice(i, 1);
       }
@@ -419,7 +423,8 @@ router.post("/checkinUser", async (req, res) => {
     for (let i = 0; i < restaurant.listings.length; i++) {
       if (
         restaurant.listings[i].taken &&
-        restaurant.listings[i].seller._id.toString() === userInfo.user.toString()
+        restaurant.listings[i].seller._id.toString() ===
+          userInfo.user.toString()
       ) {
         const seller = await User.findById(userInfo.user);
         await send_pay_now_msg(
