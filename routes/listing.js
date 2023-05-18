@@ -164,8 +164,8 @@ router.post("/unlistPosition", async (req, res) => {
         .indexOf(listingInfo.buyer.toString());
       return index >= 0;
     });
-    await restaurant.save().send(restaurant.listings);
-    return res.status(200);
+    await restaurant.save();
+    return res.status(200).send(restaurant.listings);
   } catch (error) {
     console.log(error);
     return res.status(400).send(error);
