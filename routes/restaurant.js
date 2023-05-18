@@ -46,10 +46,10 @@ const send_almost_msg = async (rid, phone, restaurantName) => {
     //   `Your table is almost ready at ${restaurantName}. Please return to the restaurant so the host can seat you soon. 您在${restaurantName}的餐桌即将准备就绪，请尽快回到餐厅门口等待，期待您的光临！`
     // );
   } else {
-    await sendText(
-      phone,
-      `Your table is almost ready at ${restaurantName}. Please return to the restaurant so the host can seat you soon.`
-    );
+    // await sendText(
+    //   phone,
+    //   `Your table is almost ready at ${restaurantName}. Please return to the restaurant so the host can seat you soon.`
+    // );
   }
 };
 
@@ -103,6 +103,7 @@ const send_pay_now_msg = async (phone, name, payment, amount) => {
 };
 
 const MINUTE = 60000;
+const NUMBER = 3;
 
 /********************************************************************
  *                        Restaurant Routes                         *
@@ -234,7 +235,7 @@ router.post("/addUser", async (req, res) => {
     await data.save();
     await restaurant.save();
     await send_init_msg(phone, name, restaurantName, user._id, rid);
-    if (index == 1) {
+    if (index <= 1) {
       await send_almost_msg(rid, phone, restaurantName);
     }
     if (
