@@ -59,6 +59,11 @@ const send_notify_msg = async (rid, phone, restaurantName) => {
       phone,
       `Your table is ready at ${restaurantName}. Please checkin with the host within 5-10 mintues so we can seat you as soon as possible. 您在${restaurantName}的餐桌已经准备就绪，请在5-10分钟之内通知餐厅前台工作人员，祝您用餐愉快！`
     );
+  } else if (rid == "noodledynasty") {
+    await sendText(
+      phone,
+      `Your table is almost ready at ${restaurantName}. Please come back and the host will call you soon.`
+    );
   } else {
     await sendText(
       phone,
