@@ -495,7 +495,7 @@ router.post("/notifyUser", async (req, res) => {
         }
         await restaurant.save();
         for (let i = 0; i < restaurant.listings.length; i++) {
-          if (restaurant.listings[i].user._id === user._id) {
+          if (restaurant.listings[i].user && restaurant.listings[i].user._id === user._id) {
             restaurant.listings.splice(i, 1);
           }
         }
