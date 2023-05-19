@@ -48,6 +48,15 @@ const send_almost_msg = async (rid, phone, restaurantName) => {
   }
 };
 
+const send_new_request_made = async (phone, rid, userId) => {
+  if (rid === "test" && rid === "noodledynasty") {
+    await sendText(
+      phone,
+      `A party in the back has made a request to swap positions with you! If you want to get paid to wait a little longer and okay with getting seated later, checkout the swap requests at https://line-up-usersite.herokuapp.com/${rid}/${userId}/en/linemarket`
+    );
+  }
+};
+
 router.post("/listPosition", async (req, res) => {
   try {
     const { rid, id, price, stripeId } = req.body;
@@ -70,10 +79,18 @@ router.post("/listPosition", async (req, res) => {
       taken: false,
       stripeId: stripeId,
     };
+    let place;
     if (listingIndex < 0) {
       restaurant.listings.push(listing);
+      place = restaurant.listings.length - 1;
     } else {
       restaurant.listings[listingIndex] = listing;
+      place = listingIndex;
+    }
+    for (let i = 1; i < place - 4; i++) {
+      const userInfo = restaurant.waitlist[i];
+      const user = await User.findById(userInfo.user);
+      send_new_request_made(user.phone, rid, user._id);
     }
     await restaurant.save();
     return res.status(200).send(restaurant.listings);

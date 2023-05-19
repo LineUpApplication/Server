@@ -25,20 +25,6 @@ const send_init_msg = async (phone, name, restaurantName, userId, rid) => {
   );
 };
 
-const send_live_support = async (rid, phone) => {
-  // if (rid == "kaiyuexuan" || rid == "spicycity") {
-  //   await sendText(
-  //     phone,
-  //     `For questions about LineUp services, contact +9495655311. 如果有任何问题或需要帮助，可以联系 +9495655311`
-  //   );
-  // } else {
-  //   await sendText(
-  //     phone,
-  //     `For questions about LineUp services, contact +9495655311.`
-  //   );
-  // }
-};
-
 const send_almost_msg = async (rid, phone, restaurantName) => {
   if (rid == "kaiyuexuan" || rid == "spicycity") {
     // await sendText(
@@ -87,10 +73,10 @@ const send_removed_msg = async (rid, phone, restaurantName) => {
 };
 
 const send_encourage_sell = async (phone, rid, userId) => {
-  if (rid === "test") {
+  if (rid === "test" && rid === "noodledynasty") {
     await sendText(
       phone,
-      `You are near the front of the line! If you are okay with getting seated later, checkout the swap requests at https://line-up-usersite.herokuapp.com/${rid}/${userId}/en/linemarket and get paid to wait a little longer!`
+      `You are near the front of the line! If you want to get paid to wait a little longer and okay with getting seated later, checkout the swap requests at https://line-up-usersite.herokuapp.com/${rid}/${userId}/en/linemarket`
     );
   }
 };
@@ -239,12 +225,11 @@ router.post("/addUser", async (req, res) => {
       await send_almost_msg(rid, phone, restaurantName);
     }
     if (
-      restaurant.listings.length &&
+      restaurant.listings.length > 0 &&
       (restaurant.waitlist.length < 5 || index == 4)
     ) {
       await send_encourage_sell(phone, rid, user._id);
     }
-    await send_live_support(rid, phone);
     return res.status(200).send(user);
   } catch (err) {
     console.log("Failed to add user: " + err);
@@ -495,7 +480,10 @@ router.post("/notifyUser", async (req, res) => {
         }
         await restaurant.save();
         for (let i = 0; i < restaurant.listings.length; i++) {
-          if (restaurant.listings[i].user && restaurant.listings[i].user._id === user._id) {
+          if (
+            restaurant.listings[i].user &&
+            restaurant.listings[i].user._id === user._id
+          ) {
             restaurant.listings.splice(i, 1);
           }
         }
