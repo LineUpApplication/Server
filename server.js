@@ -22,6 +22,7 @@ app.use(bodyParser.json())
 import  home from "./routes/home.js";
 import restaurant from "./routes/restaurant.js";
 import payment from "./routes/payment.js";
+import listing from "./routes/listing.js";
 
 // middleware
 app.use(express.json());
@@ -30,21 +31,13 @@ app.use(express.json());
 app.use("/", home);
 app.use("/restaurant", restaurant);
 app.use("/payment", payment);
+app.use("/listing", listing);
 
-//Listener for Msg
-// app.post('/message', (req, res) => {
-//   console.log(req.body);
-//   msgBody = req.body.Body;
-
-// })
-
-console.log("bruh")
 const port = process.env.PORT || 5000;
 const server = app.listen(port, () => {
   console.log(`Listening on port ${port}...`);
 });
 
-// Add graceful shutdown
 process.on("SIGTERM", () => {
   server.close();
 });
@@ -52,6 +45,5 @@ process.on("SIGTERM", () => {
 process.on("SIGINT", () => {
   server.close();
 });
-
 
 export default app;

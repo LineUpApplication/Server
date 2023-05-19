@@ -30,8 +30,8 @@ const RestaurantSchema = new mongoose.Schema({
       },
       notified: {
         type: Boolean,
-        default: false
-      }
+        default: false,
+      },
     },
   ],
   historyList: [
@@ -48,14 +48,21 @@ const RestaurantSchema = new mongoose.Schema({
       },
       timestamp: {
         type: Date,
-      }
+      },
     },
   ],
   listings: [
     {
-      user: {
+      seller: {
         type: mongoose.Schema.Types.ObjectId,
         ref: "User",
+      },
+      buyer: {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: "User",
+      },
+      stripeId: {
+        type: String,
       },
       payment: {
         type: {
@@ -68,16 +75,16 @@ const RestaurantSchema = new mongoose.Schema({
       price: {
         type: Number,
       },
-      bought: {
+      taken: {
         type: Boolean,
       },
     },
   ],
-  linepassCount: {
-    type: Number,
-    default: 0,
+  waitlistActivated: {
+    type: Boolean,
+    default: true,
   },
-  linepassActivated: {
+  marketplaceActivated: {
     type: Boolean,
     default: false,
   },
