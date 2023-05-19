@@ -80,11 +80,11 @@ const RestaurantSchema = new mongoose.Schema({
       },
     },
   ],
-  linepassCount: {
-    type: Number,
-    default: 0,
+  waitlistActivated: {
+    type: Boolean,
+    default: true,
   },
-  linepassActivated: {
+  marketplaceActivated: {
     type: Boolean,
     default: false,
   },

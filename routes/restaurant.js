@@ -295,50 +295,6 @@ router.post("/updateUser", async (req, res) => {
   }
 });
 
-router.post("/moveUser", async (req, res) => {
-  try {
-    const { id } = req.body.userInfo;
-    const { rid } = req.body.restaurant;
-    let restaurant = await Restaurant.findOne({ rid: rid });
-    const restaurantName = restaurant.name;
-    if (!restaurant) {
-      return res.status(400).send("Restaurant does not exists.");
-    }
-    let user = await User.findById(id);
-    if (!user) {
-      return res.status(400).send("User does not exists.");
-    }
-    const index = restaurant.waitlist
-      .map((userInfo) => userInfo.user.toString())
-      .indexOf(user._id.toString());
-    let userInfo;
-    if (index < 0) {
-      return res.status(400).send("User not in waitlist.");
-    }
-
-    userInfo = restaurant.waitlist.splice(index, 1)[0];
-    let data = await Data.findById(userInfo.data);
-    await Data.deleteOne({ _id: userInfo.data });
-    data = new Data({
-      user: user._id,
-      restaurant: restaurant._id,
-      partySize: userInfo.partySize,
-      placeInLine: 1,
-      createdAt: new Date(),
-    });
-    userInfo.data = data._id;
-    restaurant.waitlist.splice(1, 0, userInfo);
-    restaurant.linepassLimit -= 1;
-    await data.save();
-    await restaurant.save();
-    await send_almost_msg(rid, user.phone, restaurantName);
-    return res.status(200).send(restaurant);
-  } catch (err) {
-    console.log("Failed to move user: " + err);
-    return res.status(400).send("Failed to move user: " + err);
-  }
-});
-
 router.post("/removeUser", async (req, res) => {
   try {
     const { _id } = req.body.userInfo;
@@ -635,6 +591,54 @@ router.get("/history/:rid", async (req, res) => {
   } catch (err) {
     console.log("Failed to get restaurant: " + err);
     return res.status(400).send("Failed to get restaurant: " + err);
+  }
+});
+
+router.get("/isWaitlistActivated/:rid", async (req, res) => {
+  try {
+    const rid = req.params.rid;
+    const restaurant = await Restaurant.findOne({ rid: rid });
+    return res.status(200).send(restaurant.waitlistActivated);
+  } catch (err) {
+    console.log(err);
+    return res.status(400).send(err);
+  }
+});
+
+router.get("/isMarketplaceActivated/:rid", async (req, res) => {
+  try {
+    const rid = req.params.rid;
+    const restaurant = await Restaurant.findOne({ rid: rid });
+    return res.status(200).send(restaurant.marketplaceActivated);
+  } catch (err) {
+    console.log(err);
+    return res.status(400).send(err);
+  }
+});
+
+router.post("/setWaitlistActivated", async (req, res) => {
+  try {
+    const { rid, waitlistActivated } = req.body.restaurant;
+    const restaurant = await Restaurant.findOne({ rid: rid });
+    restaurant.waitlistActivated = waitlistActivated;
+    await restaurant.save();
+    return res.status(200).send(restaurant.waitlistActivated);
+  } catch (err) {
+    console.log(err);
+    return res.status(400).send(err);
+  }
+});
+
+router.post("/setMarketplaceActivated", async (req, res) => {
+  try {
+    const { rid, marketplaceActivated } = req.body.restaurant;
+    const restaurant = await Restaurant.findOne({ rid: "noodledynasty" });
+    restaurant.marketplaceActivated = marketplaceActivated;
+    await restaurant.save();
+    return res.status(200).send(restaurant.marketplaceActivated);
+  } catch (err) {
+    console.log(err);
+    return res.status(400).send(err);
   }
 });
 
