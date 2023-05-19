@@ -83,10 +83,12 @@ const RestaurantSchema = new mongoose.Schema({
   waitlistActivated: {
     type: Boolean,
     default: true,
+    required: true,
   },
   marketplaceActivated: {
     type: Boolean,
     default: false,
+    required: true,
   },
   joinCount: {
     type: Number,
