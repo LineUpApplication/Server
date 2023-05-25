@@ -9,7 +9,7 @@ import bcrypt from "bcrypt";
 import { generateAuthToken } from "../models/Restaurant.js";
 import { Actions } from "../utils/actionTypes.js";
 import axios from "axios";
-import { sendPayment } from "../utils/stripe.js";
+import { sendPayment } from "../utils/payment.js";
 
 const router = express.Router();
 const send_init_msg = async (phone, name, restaurantName, userId, rid) => {
@@ -389,6 +389,10 @@ router.post("/checkinUser", async (req, res) => {
           seller.name,
           restaurant.listings[i].payment,
           restaurant.listings[i].price
+        );
+        await sendPayout(
+          restaurant.listings[i].price,
+          "sb-f2npg25455803@business.example.com" // sandbox account
         );
         restaurant.listings.splice(i, 1);
       } else if (

@@ -2,7 +2,7 @@ import express from "express";
 import { Restaurant } from "../models/Restaurant.js";
 import { User } from "../models/User.js";
 import { sendText } from "../utils/twilio.js";
-import { sendPayment } from "../utils/stripe.js";
+import { sendPayment } from "../utils/payment.js";
 
 const router = express.Router();
 
