@@ -199,7 +199,7 @@ router.get("/:rid", async (req, res) => {
         .map((userInfo) => userInfo.user.toString())
         .indexOf(listingInfo.buyer.toString());
       if (index >= 0) {
-        result.push({ ...listingInfo, place: index + 1 });
+        result.push({ ...listingInfo._doc, place: index + 1 });
       }
       return index >= 0;
     });

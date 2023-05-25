@@ -620,7 +620,7 @@ router.post("/setWaitlistActivated", async (req, res) => {
 router.post("/setMarketplaceActivated", async (req, res) => {
   try {
     const { rid, marketplaceActivated } = req.body.restaurant;
-    const restaurant = await Restaurant.findOne({ rid: "noodledynasty" });
+    const restaurant = await Restaurant.findOne({ rid: rid });
     restaurant.marketplaceActivated = marketplaceActivated;
     await restaurant.save();
     return res.status(200).send(restaurant.marketplaceActivated);
