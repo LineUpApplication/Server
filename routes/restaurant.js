@@ -300,7 +300,8 @@ router.post("/removeUser", async (req, res) => {
     user = await User.findById(_id);
     await send_removed_msg(rid, user.phone, restaurantName);
     restaurant.removeCount += 1;
-    for (let i = 0; i < restaurant.listings.length; i++) {
+    let i = 0;
+    while (i < restaurant.listings.length) {
       if (
         (restaurant.listings[i].taken &&
           restaurant.listings[i].seller._id.toString() ===
@@ -310,6 +311,8 @@ router.post("/removeUser", async (req, res) => {
             userInfo.user.toString())
       ) {
         restaurant.listings.splice(i, 1);
+      } else {
+        i++;
       }
     }
     restaurant.historyList.unshift({
@@ -367,7 +370,8 @@ router.post("/checkinUser", async (req, res) => {
     if (restaurant.historyList.length > 20) {
       restaurant.historyList = restaurant.historyList.slice(0, 20);
     }
-    for (let i = 0; i < restaurant.listings.length; i++) {
+    let i = 0;
+    while (i < restaurant.listings.length) {
       if (
         restaurant.listings[i].taken &&
         restaurant.listings[i].seller._id.toString() ===
@@ -392,6 +396,8 @@ router.post("/checkinUser", async (req, res) => {
         restaurant.listings[i].buyer._id.toString() === userInfo.user.toString()
       ) {
         restaurant.listings.splice(i, 1);
+      } else {
+        i++;
       }
     }
     await restaurant.save();
@@ -468,7 +474,8 @@ router.post("/notifyUser", async (req, res) => {
         user = await User.findById(_id);
         await send_removed_msg(rid, user.phone, restaurantName);
         restaurant.removeCount += 1;
-        for (let i = 0; i < restaurant.listings.length; i++) {
+        let i = 0;
+        while (i < restaurant.listings.length) {
           if (
             (restaurant.listings[i].taken &&
               restaurant.listings[i].seller._id === user._id) ||
@@ -476,17 +483,11 @@ router.post("/notifyUser", async (req, res) => {
               restaurant.listings[i].buyer._id === user._id)
           ) {
             restaurant.listings.splice(i, 1);
+          } else {
+            i++;
           }
         }
         await restaurant.save();
-        for (let i = 0; i < restaurant.listings.length; i++) {
-          if (
-            restaurant.listings[i].user &&
-            restaurant.listings[i].user._id === user._id
-          ) {
-            restaurant.listings.splice(i, 1);
-          }
-        }
         if (index <= 1) {
           if (restaurant.waitlist.length > 1) {
             user = await User.findById(restaurant.waitlist[1].user);
