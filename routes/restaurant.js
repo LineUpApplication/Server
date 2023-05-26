@@ -8,7 +8,9 @@ import { sendText } from "../utils/twilio.js";
 import bcrypt from "bcrypt";
 import { generateAuthToken } from "../models/Restaurant.js";
 import { Actions } from "../utils/actionTypes.js";
+import axios from "axios";
 import { sendPayout } from "../utils/payment.js";
+import { ListingStatus } from "../utils/listingStatus.js";
 
 const router = express.Router();
 const send_init_msg = async (phone, name, restaurantName, userId, rid) => {
@@ -42,7 +44,7 @@ const send_notify_msg = async (rid, phone, restaurantName) => {
   if (rid == "kaiyuexuan" || rid == "spicycity") {
     await sendText(
       phone,
-      `Your table is ready at ${restaurantName}. Please checkin with the host within 5-10 mintues so we can seat you as soon as possible. 您在${restaurantName}的餐桌已经准备就绪，请在5-10分钟之内通知餐厅前台工作人员，祝您用餐愉快！`
+      `Your table is ready at ${restaurantName}. Please check-in with the host within 5-10 minutes so we can seat you as soon as possible. 您在${restaurantName}的餐桌已经准备就绪，请在5-10分钟之内通知餐厅前台工作人员，祝您用餐愉快！`
     );
   } else if (rid == "noodledynasty") {
     await sendText(
@@ -52,7 +54,7 @@ const send_notify_msg = async (rid, phone, restaurantName) => {
   } else {
     await sendText(
       phone,
-      `Your table is ready at ${restaurantName}. Please checkin with the host within 5-10 mintues so we can seat you as soon as possible.`
+      `Your table is ready at ${restaurantName}. Please check-in with the host within 5-10 minutes so we can seat you as soon as possible.`
     );
   }
 };
@@ -71,11 +73,13 @@ const send_removed_msg = async (rid, phone, restaurantName) => {
   }
 };
 
-const send_encourage_sell = async (phone, rid, userId, maxAmount) => {
-  await sendText(
-    phone,
-    `You are near the front of the line! A party near the back wants to pay $${maxAmount} to swap positions with you. If you would like to get paid to be seated a little later, accept their request at https://line-up-usersite.herokuapp.com/${rid}/${userId}/en/linemarket. \nFor questions about LineUp services, message or call +19495655311`
-  );
+const send_encourage_sell = async (phone, rid, userId) => {
+  if (rid === "test" || rid === "noodledynasty") {
+    await sendText(
+      phone,
+      `You are near the front of the line! If you want to get paid to wait a little longer and okay with getting seated later, checkout the swap requests at https://line-up-usersite.herokuapp.com/${rid}/${userId}/en/linemarket`
+    );
+  }
 };
 
 const send_pay_now_msg = async (phone, name, payout, amount) => {
@@ -342,6 +346,21 @@ router.post("/removeUser", async (req, res) => {
     user = await User.findById(_id);
     await send_removed_msg(rid, user.phone, restaurantName);
     restaurant.removeCount += 1;
+    let i = 0;
+    while (i < restaurant.listings.length) {
+      if (
+        (restaurant.listings[i].status == ListingStatus.COMPLETED &&
+          restaurant.listings[i].seller._id.toString() ===
+            userInfo.user.toString()) ||
+        (!restaurant.listings[i].status != ListingStatus.COMPLETED &&
+          restaurant.listings[i].buyer._id.toString() ===
+            userInfo.user.toString())
+      ) {
+        restaurant.listings.splice(i, 1);
+      } else {
+        i++;
+      }
+    }
     restaurant.historyList.unshift({
       user: userInfo.user,
       partySize: userInfo.partySize,
@@ -442,6 +461,41 @@ router.post("/checkinUser", async (req, res) => {
     if (restaurant.historyList.length > 20) {
       restaurant.historyList = restaurant.historyList.slice(0, 20);
     }
+    let i = 0;
+    while (i < restaurant.listings.length) {
+      if (
+        restaurant.listings[i].status == ListingStatus.COMPLETED &&
+        restaurant.listings[i].seller._id.toString() ===
+          userInfo.user.toString()
+      ) {
+        const seller = await User.findById(userInfo.user);
+        await send_pay_now_msg(
+          "9495298312",
+          seller.name,
+          restaurant.listings[i].payout,
+          restaurant.listings[i].price
+        );
+        await send_pay_now_msg(
+          "9495655311",
+          seller.name,
+          restaurant.listings[i].payout,
+          restaurant.listings[i].price
+        );
+        await sendPayout(
+          restaurant.listings[i].price,
+          "sb-f2npg25455803@business.example.com" // sandbox account
+        );
+        restaurant.listings.splice(i, 1);
+      } else if (
+        !restaurant.listings[i].status != ListingStatus.COMPLETED &&
+        restaurant.listings[i].buyer._id.toString() === userInfo.user.toString()
+      ) {
+        restaurant.listings.splice(i, 1);
+      } else {
+        i++;
+      }
+    }
+    await restaurant.save();
     const data = await Data.findById(userInfo.data);
     const currentTime = new Date().getTime();
     const joinedTime = data.createdAt.getTime();
@@ -581,6 +635,19 @@ router.post("/notifyUser", async (req, res) => {
         user = await User.findById(_id);
         await send_removed_msg(rid, user.phone, restaurantName);
         restaurant.removeCount += 1;
+        let i = 0;
+        while (i < restaurant.listings.length) {
+          if (
+            (restaurant.listings[i].status == ListingStatus.COMPLETED &&
+              restaurant.listings[i].seller._id === user._id) ||
+            (!restaurant.listings[i].status != ListingStatus.COMPLETED &&
+              restaurant.listings[i].buyer._id === user._id)
+          ) {
+            restaurant.listings.splice(i, 1);
+          } else {
+            i++;
+          }
+        }
         await restaurant.save();
         if (index <= 1) {
           if (restaurant.waitlist.length > 1) {

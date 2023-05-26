@@ -1,5 +1,6 @@
 import mongoose from "mongoose";
 import jwt from "jsonwebtoken";
+import { ListingStatus } from "../utils/listingStatus.js";
 
 const RestaurantSchema = new mongoose.Schema({
   rid: {
@@ -61,9 +62,6 @@ const RestaurantSchema = new mongoose.Schema({
         type: mongoose.Schema.Types.ObjectId,
         ref: "User",
       },
-      stripeId: {
-        type: String,
-      },
       payout: {
         type: {
           type: String,
@@ -75,8 +73,9 @@ const RestaurantSchema = new mongoose.Schema({
       price: {
         type: Number,
       },
-      taken: {
-        type: Boolean,
+      status: {
+        type: String,
+        default: ListingStatus.REQUESTED,
       },
     },
   ],

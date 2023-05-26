@@ -3,6 +3,7 @@ import { Restaurant } from "../models/Restaurant.js";
 import { User } from "../models/User.js";
 import { sendText } from "../utils/twilio.js";
 import { sendPayment } from "../utils/payment.js";
+import { ListingStatus } from "../utils/listingStatus.js";
 
 const router = express.Router();
 
@@ -26,20 +27,6 @@ const send_position_sold_msg = async (
   }
 };
 
-const send_position_bought_msg = async (rid, phone, restaurant, position) => {
-  if (rid == "kaiyuexuan" || rid == "spicycity") {
-    await sendText(
-      phone,
-      `A party in the front accepted your request to swap position. You have been moved to position ${position} at ${restaurant}. Enjoy! \nFor questions about LineUp services, message or call +19495655311`
-    );
-  } else {
-    await sendText(
-      phone,
-      `A party in the front accepted your request to swap position. You have been moved to position ${position} at ${restaurant}. Enjoy! \nFor questions about LineUp services, message or call +19495655311`
-    );
-  }
-};
-
 const send_almost_msg = async (rid, phone, restaurantName) => {
   if (rid == "kaiyuexuan" || rid == "spicycity") {
     // await sendText(
@@ -54,18 +41,22 @@ const send_almost_msg = async (rid, phone, restaurantName) => {
   }
 };
 
-const send_new_request_made = async (phone, rid, userId, place, price) => {
-  await sendText(
-    phone,
-    `The party that's ${place} in line wants to pay $${price} to swap positions with you! If you would like to get paid to be seated a little later, accept their request at https://line-up-usersite.herokuapp.com/${rid}/${userId}/en/linemarket. \nFor questions about LineUp services, message or call +19495655311`
-  );
+const send_new_request_made = async (phone, rid, userId) => {
+  if (rid === "test" || rid === "noodledynasty") {
+    await sendText(
+      phone,
+      `A party in the back has made a request to swap positions with you! If you want to get paid to wait a little longer and okay with getting seated later, checkout the swap requests at https://line-up-usersite.herokuapp.com/${rid}/${userId}/en/linemarket`
+    );
+  }
 };
 
-const send_position_requested = async (phone, rid, userId, price) => {
-  await sendText(
-    phone,
-    `You have just requested to swap position with the top 5 for $${price}. You can check the request status or cancel your request at https://line-up-usersite.herokuapp.com/${rid}/${userId}/en. \nFor questions about LineUp services, message or call +19495655311`
-  );
+const send_request_taken = async (phone, rid, userId) => {
+  if (rid === "test" || rid === "noodledynasty") {
+    await sendText(
+      phone,
+      `A party in the front has taken up your request to swap positions! Click the link and pay to complete the swap request at https://line-up-usersite.herokuapp.com/${rid}/${userId}/en/confirmswap`
+    );
+  }
 };
 
 router.post("/listPosition", async (req, res) => {
@@ -87,13 +78,16 @@ router.post("/listPosition", async (req, res) => {
     const listing = {
       buyer: id,
       price: price,
-      taken: false,
-      stripeId: stripeId,
     };
     if (listingIndex < 0) {
       restaurant.listings.push(listing);
     } else {
       restaurant.listings[listingIndex] = listing;
+    }
+    for (let i = 1; i < Math.min(waitlistIndex - 4, 5); i++) {
+      const userInfo = restaurant.waitlist[i];
+      const user = await User.findById(userInfo.user);
+      await send_new_request_made(user.phone, rid, user._id);
     }
     await restaurant.save();
     const user = await User.findById(id);
@@ -130,7 +124,7 @@ router.post("/listPosition", async (req, res) => {
   }
 });
 
-router.post("/swapPosition", async (req, res) => {
+router.post("/takeListing", async (req, res) => {
   try {
     const { buyerId, sellerId, payout } = req.body.swapInfo;
     const { rid } = req.body.restaurant;
@@ -138,7 +132,49 @@ router.post("/swapPosition", async (req, res) => {
     const listingIndex = restaurant.listings
       .map((listingInfo) => listingInfo.buyer.toString())
       .indexOf(buyerId);
-    if (listingIndex < 0 || restaurant.listings[listingIndex].taken) {
+    if (
+      listingIndex < 0 ||
+      restaurant.listings[listingIndex].status != ListingStatus.REQUESTED
+    ) {
+      return res.status(404).send("Listing not found.");
+    }
+    const waitlistSellerIndex = restaurant.waitlist
+      .map((userInfo) => userInfo.user.toString())
+      .indexOf(sellerId);
+    if (waitlistSellerIndex < 0) {
+      return res.status(404).send("Seller not in waitlist.");
+    }
+    const waitlistBuyerIndex = restaurant.waitlist
+      .map((userInfo) => userInfo.user.toString())
+      .indexOf(buyerId);
+    if (waitlistBuyerIndex < 0) {
+      return res.status(404).send("Buyer not in waitlist.");
+    }
+    restaurant.listings[listingIndex].status = ListingStatus.PENDING;
+    restaurant.listings[listingIndex].seller = sellerId;
+    restaurant.listings[listingIndex].payout = payout;
+    await restaurant.save();
+    const buyer = await User.findById(buyerId);
+    await send_request_taken(buyer.phone, rid, buyerId);
+    return res.status(200).send(restaurant.waitlist);
+  } catch (error) {
+    console.log(error);
+    return res.status(400).send(error);
+  }
+});
+
+router.post("/swapPosition", async (req, res) => {
+  try {
+    const { buyerId, sellerId, paymentId } = req.body.swapInfo;
+    const { rid } = req.body.restaurant;
+    let restaurant = await Restaurant.findOne({ rid: rid });
+    const listingIndex = restaurant.listings
+      .map((listingInfo) => listingInfo.buyer.toString())
+      .indexOf(buyerId);
+    if (
+      listingIndex < 0 ||
+      restaurant.listings[listingIndex].status != ListingStatus.PENDING
+    ) {
       return res.status(404).send("Listing not found.");
     }
     const waitlistSellerIndex = restaurant.waitlist
@@ -157,15 +193,10 @@ router.post("/swapPosition", async (req, res) => {
     const buyerInfo = restaurant.waitlist[waitlistBuyerIndex];
     restaurant.waitlist[waitlistSellerIndex] = buyerInfo;
     restaurant.waitlist[waitlistBuyerIndex] = sellerInfo;
-    await sendPayment(
-      restaurant.listings[listingIndex].price * 100,
-      restaurant.listings[listingIndex].stripeId
-    );
-    restaurant.listings[listingIndex].taken = true;
+    restaurant.listings[listingIndex].status = ListingStatus.COMPLETED;
     restaurant.listings[listingIndex].seller = sellerId;
-    restaurant.listings[listingIndex].payout = payout;
-
     await restaurant.save();
+    await sendPayment(restaurant.listings[listingIndex].price * 100, paymentId);
     const buyer = await User.findById(buyerId);
     if (waitlistSellerIndex <= 1) {
       await send_almost_msg(rid, buyer.phone, restaurant.name);
@@ -174,12 +205,6 @@ router.post("/swapPosition", async (req, res) => {
     if (waitlistSellerIndex == 1) {
       await send_almost_msg(buyer.phone, restaurant.name);
     }
-    await send_position_bought_msg(
-      rid,
-      buyer.phone,
-      restaurant.name,
-      waitlistSellerIndex + 1
-    );
     await send_position_sold_msg(
       rid,
       seller.phone,
