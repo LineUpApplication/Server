@@ -223,6 +223,7 @@ router.post("/addUser", async (req, res) => {
       await send_almost_msg(rid, phone, restaurantName);
     }
     if (
+      restaurant.marketplaceActivated &&
       restaurant.listings.length > 0 &&
       (restaurant.waitlist.length < 5 || index == 4)
     ) {
@@ -330,7 +331,11 @@ router.post("/removeUser", async (req, res) => {
         await send_almost_msg(rid, user.phone, restaurantName);
       }
     }
-    if (restaurant.listings.length && index <= 4) {
+    if (
+      restaurant.marketplaceActivated &&
+      restaurant.listings.length &&
+      index <= 4
+    ) {
       if (restaurant.waitlist.length >= 5) {
         user = await User.findById(restaurant.waitlist[4].user);
         await send_encourage_sell(user.phone, rid, user._id);
@@ -415,7 +420,11 @@ router.post("/checkinUser", async (req, res) => {
         await send_almost_msg(user.phone, restaurantName);
       }
     }
-    if (restaurant.listings.length && index <= 4) {
+    if (
+      restaurant.marketplaceActivated &&
+      restaurant.listings.length &&
+      index <= 4
+    ) {
       if (restaurant.waitlist.length >= 5) {
         const user = await User.findById(restaurant.waitlist[4].user);
         await send_encourage_sell(user.phone, rid, user._id);
@@ -496,7 +505,11 @@ router.post("/notifyUser", async (req, res) => {
             await send_almost_msg(rid, user.phone, restaurantName);
           }
         }
-        if (restaurant.listings.length && index <= 4) {
+        if (
+          restaurant.marketplaceActivated &&
+          restaurant.listings.length &&
+          index <= 4
+        ) {
           if (restaurant.waitlist.length >= 5) {
             const user = await User.findById(restaurant.waitlist[4].user);
             await send_encourage_sell(phone, rid, user._id);
