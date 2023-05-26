@@ -2,7 +2,7 @@ import mongoose from "mongoose";
 import { Data } from "../models/Data.js";
 import { Model } from "../models/Model.js";
 
-const lr = 0.05;
+const lr = 0.001;
 
 const predict = async (partySize, placeInLine, restaurantId) => {
   try {
@@ -16,7 +16,9 @@ const predict = async (partySize, placeInLine, restaurantId) => {
 const update = async (restaurantId) => {
   try {
     const model = await Model.findOne({ restaurant: restaurantId });
-    const allData = await Data.find({});
+    let allData = await Data.find({
+      restaurant: restaurantId,
+    });
     for (let i = 0; i < 5; i++) {
       await Promise.all(
         allData.map(async (data) => {

@@ -8,8 +8,7 @@ import { sendText } from "../utils/twilio.js";
 import bcrypt from "bcrypt";
 import { generateAuthToken } from "../models/Restaurant.js";
 import { Actions } from "../utils/actionTypes.js";
-import axios from "axios";
-import { sendPayment } from "../utils/payment.js";
+import { sendPayout } from "../utils/payment.js";
 
 const router = express.Router();
 const send_init_msg = async (phone, name, restaurantName, userId, rid) => {
