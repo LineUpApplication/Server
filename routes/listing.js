@@ -99,7 +99,7 @@ router.post("/listPosition", async (req, res) => {
 
 router.post("/swapPosition", async (req, res) => {
   try {
-    const { buyerId, sellerId, payment } = req.body.swapInfo;
+    const { buyerId, sellerId, payout } = req.body.swapInfo;
     const { rid } = req.body.restaurant;
     let restaurant = await Restaurant.findOne({ rid: rid });
     const listingIndex = restaurant.listings
@@ -130,7 +130,7 @@ router.post("/swapPosition", async (req, res) => {
     );
     restaurant.listings[listingIndex].taken = true;
     restaurant.listings[listingIndex].seller = sellerId;
-    restaurant.listings[listingIndex].payment = payment;
+    restaurant.listings[listingIndex].payout = payout;
 
     await restaurant.save();
     const buyer = await User.findById(buyerId);

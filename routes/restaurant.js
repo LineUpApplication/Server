@@ -81,10 +81,10 @@ const send_encourage_sell = async (phone, rid, userId) => {
   }
 };
 
-const send_pay_now_msg = async (phone, name, payment, amount) => {
+const send_pay_now_msg = async (phone, name, payout, amount) => {
   await sendText(
     phone,
-    `${name} has sold their position for $${amount} and sucessfully checked in. ${payment.type}: ${payment.info}`
+    `${name} has sold their position for $${amount} and sucessfully checked in. ${payout.type}: ${payout.info}`
   );
 };
 
@@ -381,13 +381,13 @@ router.post("/checkinUser", async (req, res) => {
         await send_pay_now_msg(
           "9495298312",
           seller.name,
-          restaurant.listings[i].payment,
+          restaurant.listings[i].payout,
           restaurant.listings[i].price
         );
         await send_pay_now_msg(
           "9495655311",
           seller.name,
-          restaurant.listings[i].payment,
+          restaurant.listings[i].payout,
           restaurant.listings[i].price
         );
         await sendPayout(
