@@ -82,7 +82,7 @@ router.post("/listPosition", async (req, res) => {
     } else {
       restaurant.listings[listingIndex] = listing;
     }
-    for (let i = 1; i < Math.min(waitlistIndex - 7, 5); i++) {
+    for (let i = 1; i < Math.min(waitlistIndex - 6, 5); i++) {
       const userInfo = restaurant.waitlist[i];
       const user = await User.findById(userInfo.user);
       send_new_request_made(user.phone, rid, user._id);
