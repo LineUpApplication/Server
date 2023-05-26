@@ -49,12 +49,10 @@ const send_almost_msg = async (rid, phone, restaurantName) => {
 };
 
 const send_new_request_made = async (phone, rid, userId) => {
-  if (rid === "test" || rid === "noodledynasty") {
-    await sendText(
-      phone,
-      `A party in the back has made a request to swap positions with you! If you want to get paid to wait a little longer and okay with getting seated later, checkout the swap requests at https://line-up-usersite.herokuapp.com/${rid}/${userId}/en/linemarket`
-    );
-  }
+  await sendText(
+    phone,
+    `A party in the back has made a request to swap positions with you! If you want to get paid to wait a little longer and okay with getting seated later, checkout the swap requests at https://line-up-usersite.herokuapp.com/${rid}/${userId}/en/linemarket`
+  );
 };
 
 router.post("/listPosition", async (req, res) => {

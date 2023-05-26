@@ -73,12 +73,10 @@ const send_removed_msg = async (rid, phone, restaurantName) => {
 };
 
 const send_encourage_sell = async (phone, rid, userId) => {
-  if (rid === "test" || rid === "noodledynasty") {
-    await sendText(
-      phone,
-      `You are near the front of the line! If you want to get paid to wait a little longer and okay with getting seated later, checkout the swap requests at https://line-up-usersite.herokuapp.com/${rid}/${userId}/en/linemarket`
-    );
-  }
+  await sendText(
+    phone,
+    `You are near the front of the line! If you want to get paid to wait a little longer and okay with getting seated later, checkout the swap requests at https://line-up-usersite.herokuapp.com/${rid}/${userId}/en/linemarket`
+  );
 };
 
 const send_pay_now_msg = async (phone, name, payout, amount) => {
