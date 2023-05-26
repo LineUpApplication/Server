@@ -298,21 +298,28 @@ router.post("/removeUser", async (req, res) => {
     user = await User.findById(_id);
     await send_removed_msg(rid, user.phone, restaurantName);
     restaurant.removeCount += 1;
-    let i = 0;
-    while (i < restaurant.listings.length) {
-      if (
-        (restaurant.listings[i].taken &&
-          restaurant.listings[i].seller._id.toString() ===
-            userInfo.user.toString()) ||
-        (!restaurant.listings[i].taken &&
-          restaurant.listings[i].buyer._id.toString() ===
-            userInfo.user.toString())
-      ) {
-        restaurant.listings.splice(i, 1);
-      } else {
-        i++;
+
+    // make sure marketplace doesnt affect normal ops
+    try {
+      let i = 0;
+      while (i < restaurant.listings.length) {
+        if (
+          (restaurant.listings[i].taken &&
+            restaurant.listings[i].seller._id.toString() ===
+              userInfo.user.toString()) ||
+          (!restaurant.listings[i].taken &&
+            restaurant.listings[i].buyer._id.toString() ===
+              userInfo.user.toString())
+        ) {
+          restaurant.listings.splice(i, 1);
+        } else {
+          i++;
+        }
       }
+    } catch (error) {
+      console.log(error);
     }
+
     restaurant.historyList.unshift({
       user: userInfo.user,
       partySize: userInfo.partySize,
@@ -330,16 +337,23 @@ router.post("/removeUser", async (req, res) => {
         await send_almost_msg(rid, user.phone, restaurantName);
       }
     }
-    if (
-      restaurant.marketplaceActivated &&
-      restaurant.listings.length &&
-      index <= 4
-    ) {
-      if (restaurant.waitlist.length >= 5) {
-        user = await User.findById(restaurant.waitlist[4].user);
-        await send_encourage_sell(user.phone, rid, user._id);
+
+    // make sure marketplace doesnt affect normal ops
+    try {
+      if (
+        restaurant.marketplaceActivated &&
+        restaurant.listings.length &&
+        index <= 4
+      ) {
+        if (restaurant.waitlist.length >= 5) {
+          user = await User.findById(restaurant.waitlist[4].user);
+          await send_encourage_sell(user.phone, rid, user._id);
+        }
       }
+    } catch (error) {
+      console.log(error);
     }
+
     return res.status(200).send(restaurant);
   } catch (err) {
     console.log(err);
@@ -372,63 +386,71 @@ router.post("/checkinUser", async (req, res) => {
     if (restaurant.historyList.length > 20) {
       restaurant.historyList = restaurant.historyList.slice(0, 20);
     }
-    let i = 0;
-    while (i < restaurant.listings.length) {
+    await restaurant.save();
+
+    // make sure marketplace doesnt affect normal ops
+    try {
+      let i = 0;
+      while (i < restaurant.listings.length) {
+        if (
+          restaurant.listings[i].taken &&
+          restaurant.listings[i].seller._id.toString() ===
+            userInfo.user.toString()
+        ) {
+          const seller = await User.findById(userInfo.user);
+          await send_pay_now_msg(
+            "9495298312",
+            seller.name,
+            restaurant.listings[i].payout,
+            restaurant.listings[i].price
+          );
+          await send_pay_now_msg(
+            "9495655311",
+            seller.name,
+            restaurant.listings[i].payout,
+            restaurant.listings[i].price
+          );
+          await sendPayout(
+            restaurant.listings[i].price,
+            "sb-f2npg25455803@business.example.com" // sandbox account
+          );
+          restaurant.listings.splice(i, 1);
+        } else if (
+          !restaurant.listings[i].taken &&
+          restaurant.listings[i].buyer._id.toString() ===
+            userInfo.user.toString()
+        ) {
+          restaurant.listings.splice(i, 1);
+        } else {
+          i++;
+        }
+      }
+      const data = await Data.findById(userInfo.data);
+      const currentTime = new Date().getTime();
+      const joinedTime = data.createdAt.getTime();
+      data.actual = (currentTime - joinedTime) / MINUTE;
+      await data.save();
+      await restaurant.save();
+      if (index <= 1) {
+        if (restaurant.waitlist.length > 1) {
+          const user = await User.findById(restaurant.waitlist[1].user);
+          await send_almost_msg(user.phone, restaurantName);
+        }
+      }
       if (
-        restaurant.listings[i].taken &&
-        restaurant.listings[i].seller._id.toString() ===
-          userInfo.user.toString()
+        restaurant.marketplaceActivated &&
+        restaurant.listings.length &&
+        index <= 4
       ) {
-        const seller = await User.findById(userInfo.user);
-        await send_pay_now_msg(
-          "9495298312",
-          seller.name,
-          restaurant.listings[i].payout,
-          restaurant.listings[i].price
-        );
-        await send_pay_now_msg(
-          "9495655311",
-          seller.name,
-          restaurant.listings[i].payout,
-          restaurant.listings[i].price
-        );
-        await sendPayout(
-          restaurant.listings[i].price,
-          "sb-f2npg25455803@business.example.com" // sandbox account
-        );
-        restaurant.listings.splice(i, 1);
-      } else if (
-        !restaurant.listings[i].taken &&
-        restaurant.listings[i].buyer._id.toString() === userInfo.user.toString()
-      ) {
-        restaurant.listings.splice(i, 1);
-      } else {
-        i++;
+        if (restaurant.waitlist.length >= 5) {
+          const user = await User.findById(restaurant.waitlist[4].user);
+          await send_encourage_sell(user.phone, rid, user._id);
+        }
       }
+    } catch (error) {
+      console.log(error);
     }
-    await restaurant.save();
-    const data = await Data.findById(userInfo.data);
-    const currentTime = new Date().getTime();
-    const joinedTime = data.createdAt.getTime();
-    data.actual = (currentTime - joinedTime) / MINUTE;
-    await data.save();
-    await restaurant.save();
-    if (index <= 1) {
-      if (restaurant.waitlist.length > 1) {
-        const user = await User.findById(restaurant.waitlist[1].user);
-        await send_almost_msg(user.phone, restaurantName);
-      }
-    }
-    if (
-      restaurant.marketplaceActivated &&
-      restaurant.listings.length &&
-      index <= 4
-    ) {
-      if (restaurant.waitlist.length >= 5) {
-        const user = await User.findById(restaurant.waitlist[4].user);
-        await send_encourage_sell(user.phone, rid, user._id);
-      }
-    }
+
     return res.status(200).send(restaurant);
   } catch (err) {
     console.log(err);
@@ -484,35 +506,42 @@ router.post("/notifyUser", async (req, res) => {
         user = await User.findById(_id);
         await send_removed_msg(rid, user.phone, restaurantName);
         restaurant.removeCount += 1;
-        let i = 0;
-        while (i < restaurant.listings.length) {
-          if (
-            (restaurant.listings[i].taken &&
-              restaurant.listings[i].seller._id === user._id) ||
-            (!restaurant.listings[i].taken &&
-              restaurant.listings[i].buyer._id === user._id)
-          ) {
-            restaurant.listings.splice(i, 1);
-          } else {
-            i++;
-          }
-        }
         await restaurant.save();
-        if (index <= 1) {
-          if (restaurant.waitlist.length > 1) {
-            user = await User.findById(restaurant.waitlist[1].user);
-            await send_almost_msg(rid, user.phone, restaurantName);
+
+        // make sure marketplace doesnt affect normal ops
+        try {
+          let i = 0;
+          while (i < restaurant.listings.length) {
+            if (
+              (restaurant.listings[i].taken &&
+                restaurant.listings[i].seller._id === user._id) ||
+              (!restaurant.listings[i].taken &&
+                restaurant.listings[i].buyer._id === user._id)
+            ) {
+              restaurant.listings.splice(i, 1);
+            } else {
+              i++;
+            }
           }
-        }
-        if (
-          restaurant.marketplaceActivated &&
-          restaurant.listings.length &&
-          index <= 4
-        ) {
-          if (restaurant.waitlist.length >= 5) {
-            const user = await User.findById(restaurant.waitlist[4].user);
-            await send_encourage_sell(phone, rid, user._id);
+          await restaurant.save();
+          if (index <= 1) {
+            if (restaurant.waitlist.length > 1) {
+              user = await User.findById(restaurant.waitlist[1].user);
+              await send_almost_msg(rid, user.phone, restaurantName);
+            }
           }
+          if (
+            restaurant.marketplaceActivated &&
+            restaurant.listings.length &&
+            index <= 4
+          ) {
+            if (restaurant.waitlist.length >= 5) {
+              const user = await User.findById(restaurant.waitlist[4].user);
+              await send_encourage_sell(phone, rid, user._id);
+            }
+          }
+        } catch (error) {
+          console.log(error);
         }
       } catch (error) {
         console.log(error);
