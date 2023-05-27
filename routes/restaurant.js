@@ -221,13 +221,6 @@ router.post("/addUser", async (req, res) => {
     if (index <= 1) {
       await send_almost_msg(rid, phone, restaurantName);
     }
-    if (
-      restaurant.marketplaceActivated &&
-      restaurant.listings.length > 0 &&
-      (restaurant.waitlist.length < 5 || index == 4)
-    ) {
-      await send_encourage_sell(phone, rid, user._id);
-    }
     return res.status(200).send(user);
   } catch (err) {
     console.log("Failed to add user: " + err);
