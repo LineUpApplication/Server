@@ -674,6 +674,30 @@ router.post("/setMarketplaceActivated", async (req, res) => {
   }
 });
 
+router.get("/isTimeEstimateActivated/:rid", async (req, res) => {
+  try {
+    const rid = req.params.rid;
+    const restaurant = await Restaurant.findOne({ rid: rid });
+    return res.status(200).send(restaurant.timeEstimateActivated);
+  } catch (err) {
+    console.log(err);
+    return res.status(400).send(err);
+  }
+});
+
+router.post("/setTimeEstimateActivated", async (req, res) => {
+  try {
+    const { rid, timeEstimateActivated } = req.body.restaurant;
+    const restaurant = await Restaurant.findOne({ rid: rid });
+    restaurant.timeEstimateActivated = timeEstimateActivated;
+    await restaurant.save();
+    return res.status(200).send(restaurant.timeEstimateActivated);
+  } catch (err) {
+    console.log(err);
+    return res.status(400).send(err);
+  }
+});
+
 router.get("/:rid", async (req, res) => {
   try {
     const rid = req.params.rid;

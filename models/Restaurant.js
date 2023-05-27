@@ -90,6 +90,11 @@ const RestaurantSchema = new mongoose.Schema({
     default: false,
     required: true,
   },
+  timeEstimateActivated: {
+    type: Boolean,
+    default: true,
+    required: true,
+  },
   joinCount: {
     type: Number,
     default: 0,
