@@ -48,10 +48,10 @@ const send_almost_msg = async (rid, phone, restaurantName) => {
   }
 };
 
-const send_new_request_made = async (phone, rid, userId) => {
+const send_new_request_made = async (phone, rid, userId, place, price) => {
   await sendText(
     phone,
-    `A party in the back has made a request to swap positions with you! If you want to get paid to wait a little longer and okay with getting seated later, checkout the swap requests at https://line-up-usersite.herokuapp.com/${rid}/${userId}/en/linemarket`
+    `The party that's ${place} in line wants to pay $${price} to swap positions with you! If you would like to get paid to be seated a little later, accept their request at https://line-up-usersite.herokuapp.com/${rid}/${userId}/en/linemarket`
   );
 };
 
@@ -82,10 +82,30 @@ router.post("/listPosition", async (req, res) => {
     } else {
       restaurant.listings[listingIndex] = listing;
     }
+    let place = waitlistIndex + 1;
+    let suffix;
+    switch (place % 10) {
+      case 1:
+        suffix = "st";
+        break;
+      case 2:
+        suffix = "nd";
+        break;
+      case 3:
+        suffix = "rd";
+        break;
+      default:
+        suffix = "th";
+        break;
+    }
+    if (10 < place % 100 && place % 100 < 14) {
+      suffix = "th";
+    }
+    place = place + suffix;
     for (let i = 1; i < Math.min(waitlistIndex - 6, 5); i++) {
       const userInfo = restaurant.waitlist[i];
       const user = await User.findById(userInfo.user);
-      send_new_request_made(user.phone, rid, user._id);
+      send_new_request_made(user.phone, rid, user._id, place, price);
     }
     await restaurant.save();
     return res.status(200).send(restaurant.listings);
