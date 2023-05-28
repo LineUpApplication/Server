@@ -415,16 +415,17 @@ router.post("/checkinUser", async (req, res) => {
             restaurant.listings[i].price,
             "sb-f2npg25455803@business.example.com" // sandbox account
           );
-          restaurant.listings.splice(i, 1);
+          // restaurant.listings.splice(i, 1);
         } else if (
           !restaurant.listings[i].taken &&
           restaurant.listings[i].buyer._id.toString() ===
             userInfo.user.toString()
         ) {
-          restaurant.listings.splice(i, 1);
+          // restaurant.listings.splice(i, 1);
         } else {
-          i++;
+          // i++;
         }
+        i++;
       }
       if (index <= 1) {
         if (restaurant.waitlist.length > 1) {
