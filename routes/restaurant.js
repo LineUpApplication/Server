@@ -501,7 +501,7 @@ router.post("/notifyUser", async (req, res) => {
     }
     restaurant.waitlist[index].notified = true;
     await restaurant.save();
-    // Remove user after certain time bruh
+    // Remove user after certain time
     setTimeout(async () => {
       try {
         let restaurant = await Restaurant.findOne({ rid: rid });
