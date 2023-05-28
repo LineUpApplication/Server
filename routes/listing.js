@@ -194,7 +194,14 @@ router.post("/unlistPosition", async (req, res) => {
       const index = restaurant.waitlist
         .map((userInfo) => userInfo.user.toString())
         .indexOf(listingInfo.buyer.toString());
-      return index >= 0;
+      if (index < 0) {
+        const index = restaurant.waitlist
+          .map((userInfo) => userInfo.user.toString())
+          .indexOf(listingInfo.seller.toString());
+        return index < 0;
+      } else {
+        return true;
+      }
     });
     await restaurant.save();
     return res.status(200).send(restaurant.listings);
@@ -216,7 +223,14 @@ router.get("/:rid", async (req, res) => {
       if (!listingInfo.taken && index >= 0) {
         result.push({ ...listingInfo._doc, place: index + 1 });
       }
-      return index >= 0;
+      if (index < 0) {
+        const index = restaurant.waitlist
+          .map((userInfo) => userInfo.user.toString())
+          .indexOf(listingInfo.seller.toString());
+        return index < 0;
+      } else {
+        return true;
+      }
     });
     await restaurant.save();
     result.sort((listingInfo) => listingInfo.place);

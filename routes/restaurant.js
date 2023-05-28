@@ -334,7 +334,14 @@ router.post("/removeUser", async (req, res) => {
         if (!listingInfo.taken && listingIndex >= index + 4) {
           result.push({ ...listingInfo._doc, place: index + 1 });
         }
-        return listingIndex >= 0;
+        if (listingIndex < 0) {
+          const listingIndex = restaurant.waitlist
+            .map((userInfo) => userInfo.user.toString())
+            .indexOf(listingInfo.seller.toString());
+          return listingIndex < 0;
+        } else {
+          return true;
+        }
       });
       await restaurant.save();
       if (restaurant.marketplaceActivated && result.length && index <= 4) {
@@ -441,7 +448,14 @@ router.post("/checkinUser", async (req, res) => {
         if (!listingInfo.taken && listingIndex >= index + 4) {
           result.push({ ...listingInfo._doc, place: index + 1 });
         }
-        return listingIndex >= 0;
+        if (listingIndex < 0) {
+          const listingIndex = restaurant.waitlist
+            .map((userInfo) => userInfo.user.toString())
+            .indexOf(listingInfo.seller.toString());
+          return listingIndex < 0;
+        } else {
+          return true;
+        }
       });
       await restaurant.save();
       if (restaurant.marketplaceActivated && result.length && index <= 4) {
@@ -543,7 +557,14 @@ router.post("/notifyUser", async (req, res) => {
             if (!listingInfo.taken && listingIndex >= index + 4) {
               result.push({ ...listingInfo._doc, place: index + 1 });
             }
-            return listingIndex >= 0;
+            if (listingIndex < 0) {
+              const listingIndex = restaurant.waitlist
+                .map((userInfo) => userInfo.user.toString())
+                .indexOf(listingInfo.seller.toString());
+              return listingIndex < 0;
+            } else {
+              return true;
+            }
           });
           await restaurant.save();
           if (restaurant.marketplaceActivated && result.length && index <= 4) {
