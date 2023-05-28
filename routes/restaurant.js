@@ -312,20 +312,20 @@ router.post("/removeUser", async (req, res) => {
     // make sure marketplace doesnt affect normal ops
     try {
       let i = 0;
-      while (i < restaurant.listings.length) {
-        if (
-          (restaurant.listings[i].taken &&
-            restaurant.listings[i].seller._id.toString() ===
-              userInfo.user.toString()) ||
-          (!restaurant.listings[i].taken &&
-            restaurant.listings[i].buyer._id.toString() ===
-              userInfo.user.toString())
-        ) {
-          restaurant.listings.splice(i, 1);
-        } else {
-          i++;
-        }
-      }
+      // while (i < restaurant.listings.length) {
+      //   if (
+      //     (restaurant.listings[i].taken &&
+      //       restaurant.listings[i].seller._id.toString() ===
+      //         userInfo.user.toString()) ||
+      //     (!restaurant.listings[i].taken &&
+      //       restaurant.listings[i].buyer._id.toString() ===
+      //         userInfo.user.toString())
+      //   ) {
+      //     restaurant.listings.splice(i, 1);
+      //   } else {
+      //     i++;
+      //   }
+      // }
       let result = [];
       restaurant.listings = restaurant.listings.filter((listingInfo) => {
         const listingIndex = restaurant.waitlist
@@ -522,18 +522,18 @@ router.post("/notifyUser", async (req, res) => {
         // make sure marketplace doesnt affect normal ops
         try {
           let i = 0;
-          while (i < restaurant.listings.length) {
-            if (
-              (restaurant.listings[i].taken &&
-                restaurant.listings[i].seller._id === user._id) ||
-              (!restaurant.listings[i].taken &&
-                restaurant.listings[i].buyer._id === user._id)
-            ) {
-              restaurant.listings.splice(i, 1);
-            } else {
-              i++;
-            }
-          }
+          // while (i < restaurant.listings.length) {
+          //   if (
+          //     (restaurant.listings[i].taken &&
+          //       restaurant.listings[i].seller._id === user._id) ||
+          //     (!restaurant.listings[i].taken &&
+          //       restaurant.listings[i].buyer._id === user._id)
+          //   ) {
+          //     restaurant.listings.splice(i, 1);
+          //   } else {
+          //     i++;
+          //   }
+          // }
           let result = [];
           restaurant.listings = restaurant.listings.filter((listingInfo) => {
             const listingIndex = restaurant.waitlist
