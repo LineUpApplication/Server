@@ -331,7 +331,7 @@ router.post("/removeUser", async (req, res) => {
         const listingIndex = restaurant.waitlist
           .map((userInfo) => userInfo.user.toString())
           .indexOf(listingInfo.buyer.toString());
-        if (!listingInfo.taken && listingIndex >= index + 7) {
+        if (!listingInfo.taken && listingIndex >= index + 4) {
           result.push({ ...listingInfo._doc, place: index + 1 });
         }
         return listingIndex >= 0;
@@ -437,7 +437,7 @@ router.post("/checkinUser", async (req, res) => {
         const listingIndex = restaurant.waitlist
           .map((userInfo) => userInfo.user.toString())
           .indexOf(listingInfo.buyer.toString());
-        if (!listingInfo.taken && listingIndex >= index + 7) {
+        if (!listingInfo.taken && listingIndex >= index + 4) {
           result.push({ ...listingInfo._doc, place: index + 1 });
         }
         return listingIndex >= 0;
@@ -539,7 +539,7 @@ router.post("/notifyUser", async (req, res) => {
             const listingIndex = restaurant.waitlist
               .map((userInfo) => userInfo.user.toString())
               .indexOf(listingInfo.buyer.toString());
-            if (!listingInfo.taken && listingIndex >= index + 7) {
+            if (!listingInfo.taken && listingIndex >= index + 4) {
               result.push({ ...listingInfo._doc, place: index + 1 });
             }
             return listingIndex >= 0;

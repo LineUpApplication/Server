@@ -102,7 +102,7 @@ router.post("/listPosition", async (req, res) => {
       suffix = "th";
     }
     place = place + suffix;
-    for (let i = 1; i < Math.min(waitlistIndex - 6, 5); i++) {
+    for (let i = 1; i < Math.min(waitlistIndex - 3, 5); i++) {
       const userInfo = restaurant.waitlist[i];
       const user = await User.findById(userInfo.user);
       send_new_request_made(user.phone, rid, user._id, place, price);
