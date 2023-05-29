@@ -157,10 +157,10 @@ router.post("/swapPosition", async (req, res) => {
     const buyerInfo = restaurant.waitlist[waitlistBuyerIndex];
     restaurant.waitlist[waitlistSellerIndex] = buyerInfo;
     restaurant.waitlist[waitlistBuyerIndex] = sellerInfo;
-    // await sendPayment(
-    //   restaurant.listings[listingIndex].price * 100,
-    //   restaurant.listings[listingIndex].stripeId
-    // );
+    await sendPayment(
+      restaurant.listings[listingIndex].price * 100,
+      restaurant.listings[listingIndex].stripeId
+    );
     restaurant.listings[listingIndex].taken = true;
     restaurant.listings[listingIndex].seller = sellerId;
     restaurant.listings[listingIndex].payout = payout;
@@ -184,7 +184,8 @@ router.post("/swapPosition", async (req, res) => {
       rid,
       seller.phone,
       restaurant.name,
-      waitlistBuyerIndex + 1
+      waitlistBuyerIndex + 1,
+      restaurant.listings[listingIndex].price
     );
     return res.status(200).send(restaurant.waitlist);
   } catch (error) {
