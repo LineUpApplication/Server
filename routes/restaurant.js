@@ -74,7 +74,7 @@ const send_removed_msg = async (rid, phone, restaurantName) => {
 const send_encourage_sell = async (phone, rid, userId, maxAmount) => {
   await sendText(
     phone,
-    `You are near the front of the line! A party near the back wants to pay $${maxAmount} to swap positions with you. If you would like to get paid to be seated a little later, accept their request at https://line-up-usersite.herokuapp.com/${rid}/${userId}/en/linemarket. For questions about LineUp services, contact +19495655311.`
+    `You are near the front of the line! A party near the back wants to pay $${maxAmount} to swap positions with you. If you would like to get paid to be seated a little later, accept their request at https://line-up-usersite.herokuapp.com/${rid}/${userId}/en/linemarket. \nFor questions about LineUp services, message or call +19495655311`
   );
 };
 

@@ -6,16 +6,22 @@ import { sendPayment } from "../utils/payment.js";
 
 const router = express.Router();
 
-const send_position_sold_msg = async (rid, phone, restaurant, position) => {
+const send_position_sold_msg = async (
+  rid,
+  phone,
+  restaurant,
+  position,
+  price
+) => {
   if (rid == "kaiyuexuan" || rid == "spicycity") {
     await sendText(
       phone,
-      `Your position at ${restaurant} has been sold, you have been moved to position ${position}, you will receive your payment once you've checked in at the restaurant. For questions about LineUp services, contact +19495655311.`
+      `You’ve accepted a swap request! You have been moved to position ${position}. Reminder that you will only receive the $${price} payment after you check in at ${restaurant}. \nFor questions about LineUp services, message or call +19495655311`
     );
   } else {
     await sendText(
       phone,
-      `Your position at ${restaurant} has been sold, you have been moved to position ${position}, you will receive your payment once you've checked in at the restaurant. For questions about LineUp services, contact +19495655311.`
+      `You’ve accepted a swap request! You have been moved to position ${position}. Reminder that you will only receive the $${price} payment after you check in at ${restaurant}. \nFor questions about LineUp services, message or call +19495655311`
     );
   }
 };
@@ -24,12 +30,12 @@ const send_position_bought_msg = async (rid, phone, restaurant, position) => {
   if (rid == "kaiyuexuan" || rid == "spicycity") {
     await sendText(
       phone,
-      `Someone has taken your request to swap position at ${restaurant}, you have been moved to position ${position}, enjoy! For questions about LineUp services, contact +19495655311.`
+      `A party in the front accepted your request to swap position. You have been moved to position ${position} at ${restaurant}. Enjoy! \nFor questions about LineUp services, message or call +19495655311`
     );
   } else {
     await sendText(
       phone,
-      `Someone has taken your request to swap position at ${restaurant}, you have been moved to position ${position}, enjoy! For questions about LineUp services, contact +19495655311.`
+      `A party in the front accepted your request to swap position. You have been moved to position ${position} at ${restaurant}. Enjoy! \nFor questions about LineUp services, message or call +19495655311`
     );
   }
 };
@@ -51,14 +57,14 @@ const send_almost_msg = async (rid, phone, restaurantName) => {
 const send_new_request_made = async (phone, rid, userId, place, price) => {
   await sendText(
     phone,
-    `The party that's ${place} in line wants to pay $${price} to swap positions with you! If you would like to get paid to be seated a little later, accept their request at https://line-up-usersite.herokuapp.com/${rid}/${userId}/en/linemarket. For questions about LineUp services, contact +19495655311.`
+    `The party that's ${place} in line wants to pay $${price} to swap positions with you! If you would like to get paid to be seated a little later, accept their request at https://line-up-usersite.herokuapp.com/${rid}/${userId}/en/linemarket. \nFor questions about LineUp services, message or call +19495655311`
   );
 };
 
 const send_position_requested = async (phone, rid, userId, price) => {
   await sendText(
     phone,
-    `You have just requested to swap position with the top 5 for $${price}. You can check the request status or cancel your request at https://line-up-usersite.herokuapp.com/${rid}/${userId}/en. For questions about LineUp services, contact +19495655311.`
+    `You have just requested to swap position with the top 5 for $${price}. You can check the request status or cancel your request at https://line-up-usersite.herokuapp.com/${rid}/${userId}/en. \nFor questions about LineUp services, message or call +19495655311`
   );
 };
 
