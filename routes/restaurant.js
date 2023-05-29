@@ -402,6 +402,8 @@ router.post("/removeUser", async (req, res) => {
           }).price;
           const user = await User.findById(restaurant.waitlist[4].user);
           await send_encourage_sell(user.phone, rid, user._id, maxAmount);
+          restaurant.encourageCount += 1;
+          await restaurant.save();
         }
       }
     } catch (error) {
@@ -516,6 +518,8 @@ router.post("/checkinUser", async (req, res) => {
           }).price;
           const user = await User.findById(restaurant.waitlist[4].user);
           await send_encourage_sell(user.phone, rid, user._id, maxAmount);
+          restaurant.encourageCount += 1;
+          await restaurant.save();
         }
       }
     } catch (error) {
@@ -625,6 +629,8 @@ router.post("/notifyUser", async (req, res) => {
               }).price;
               const user = await User.findById(restaurant.waitlist[4].user);
               await send_encourage_sell(user.phone, rid, user._id, maxAmount);
+              restaurant.encourageCount += 1;
+              await restaurant.save();
             }
           }
         } catch (error) {

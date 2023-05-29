@@ -103,6 +103,10 @@ const RestaurantSchema = new mongoose.Schema({
     type: Number,
     default: 0,
   },
+  encourageCount: {
+    type: Number,
+    default: 0,
+  },
 });
 
 export const Restaurant = mongoose.model("Restaurant", RestaurantSchema);
