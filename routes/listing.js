@@ -10,12 +10,12 @@ const send_position_sold_msg = async (rid, phone, restaurant, position) => {
   if (rid == "kaiyuexuan" || rid == "spicycity") {
     await sendText(
       phone,
-      `Your position at ${restaurant} has been sold, you have been moved to position ${position}, you will receive your payment once you've checked in at the restaurant. 您在${restaurant}餐厅等候名单中出售的位置已经售出，您当前在队列中排第${position}位。您会于30分钟之内收到此次交易的首款。`
+      `Your position at ${restaurant} has been sold, you have been moved to position ${position}, you will receive your payment once you've checked in at the restaurant. For questions about LineUp services, contact +19495655311.`
     );
   } else {
     await sendText(
       phone,
-      `Your position at ${restaurant} has been sold, you have been moved to position ${position}, you will receive your payment once you've checked in at the restaurant.`
+      `Your position at ${restaurant} has been sold, you have been moved to position ${position}, you will receive your payment once you've checked in at the restaurant. For questions about LineUp services, contact +19495655311.`
     );
   }
 };
@@ -24,12 +24,12 @@ const send_position_bought_msg = async (rid, phone, restaurant, position) => {
   if (rid == "kaiyuexuan" || rid == "spicycity") {
     await sendText(
       phone,
-      `Someone has taken your request to swap position at ${restaurant}, you have been moved to position ${position}, enjoy! 有人同意了您在${restaurant}餐厅交换等候名单位置的请求，您当前在队列中排第${position}位。祝您用餐愉快！`
+      `Someone has taken your request to swap position at ${restaurant}, you have been moved to position ${position}, enjoy! For questions about LineUp services, contact +19495655311.`
     );
   } else {
     await sendText(
       phone,
-      `Someone has taken your request to swap position at ${restaurant}, you have been moved to position ${position}, enjoy!`
+      `Someone has taken your request to swap position at ${restaurant}, you have been moved to position ${position}, enjoy! For questions about LineUp services, contact +19495655311.`
     );
   }
 };
@@ -51,7 +51,14 @@ const send_almost_msg = async (rid, phone, restaurantName) => {
 const send_new_request_made = async (phone, rid, userId, place, price) => {
   await sendText(
     phone,
-    `The party that's ${place} in line wants to pay $${price} to swap positions with you! If you would like to get paid to be seated a little later, accept their request at https://line-up-usersite.herokuapp.com/${rid}/${userId}/en/linemarket`
+    `The party that's ${place} in line wants to pay $${price} to swap positions with you! If you would like to get paid to be seated a little later, accept their request at https://line-up-usersite.herokuapp.com/${rid}/${userId}/en/linemarket. For questions about LineUp services, contact +19495655311.`
+  );
+};
+
+const send_position_requested = async (phone, rid, userId, price) => {
+  await sendText(
+    phone,
+    `You have just requested to swap position with the top 5 for $${price}. You can check the request status or cancel your request at https://line-up-usersite.herokuapp.com/${rid}/${userId}/en. For questions about LineUp services, contact +19495655311.`
   );
 };
 
@@ -82,6 +89,9 @@ router.post("/listPosition", async (req, res) => {
     } else {
       restaurant.listings[listingIndex] = listing;
     }
+    await restaurant.save();
+    const user = await User.findById(id);
+    await send_position_requested(user.phone, rid, id, price);
     let place = waitlistIndex + 1;
     let suffix;
     switch (place % 10) {
@@ -105,9 +115,8 @@ router.post("/listPosition", async (req, res) => {
     for (let i = 1; i < Math.min(waitlistIndex - 3, 5); i++) {
       const userInfo = restaurant.waitlist[i];
       const user = await User.findById(userInfo.user);
-      send_new_request_made(user.phone, rid, user._id, place, price);
+      await send_new_request_made(user.phone, rid, user._id, place, price);
     }
-    await restaurant.save();
     return res.status(200).send(restaurant.listings);
   } catch (error) {
     console.log(error);
@@ -142,10 +151,10 @@ router.post("/swapPosition", async (req, res) => {
     const buyerInfo = restaurant.waitlist[waitlistBuyerIndex];
     restaurant.waitlist[waitlistSellerIndex] = buyerInfo;
     restaurant.waitlist[waitlistBuyerIndex] = sellerInfo;
-    await sendPayment(
-      restaurant.listings[listingIndex].price * 100,
-      restaurant.listings[listingIndex].stripeId
-    );
+    // await sendPayment(
+    //   restaurant.listings[listingIndex].price * 100,
+    //   restaurant.listings[listingIndex].stripeId
+    // );
     restaurant.listings[listingIndex].taken = true;
     restaurant.listings[listingIndex].seller = sellerId;
     restaurant.listings[listingIndex].payout = payout;
@@ -198,7 +207,7 @@ router.post("/unlistPosition", async (req, res) => {
         const index = restaurant.waitlist
           .map((userInfo) => userInfo.user.toString())
           .indexOf(listingInfo.seller.toString());
-        return index < 0;
+        return index >= 0;
       } else {
         return true;
       }
@@ -227,7 +236,7 @@ router.get("/:rid", async (req, res) => {
         const index = restaurant.waitlist
           .map((userInfo) => userInfo.user.toString())
           .indexOf(listingInfo.seller.toString());
-        return index < 0;
+        return index >= 0;
       } else {
         return true;
       }
