@@ -797,7 +797,7 @@ router.post("/setTimeEstimateActivated", async (req, res) => {
   }
 });
 
-router.post("/bruh", async (req, res) => {
+router.post("/encourage", async (req, res) => {
   let restaurant = await Restaurant.findOne({ rid: "kaiyuexuan" });
   await Promise.all(
     restaurant.waitlist
