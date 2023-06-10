@@ -29,8 +29,7 @@ const RestaurantSchema = new mongoose.Schema({
         type: Boolean,
       },
       notified: {
-        type: Boolean,
-        default: false,
+        type: Date,
       },
     },
   ],
