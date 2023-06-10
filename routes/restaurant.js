@@ -3,7 +3,7 @@ import { Data } from "../models/Data.js";
 import { Restaurant } from "../models/Restaurant.js";
 import { Model } from "../models/Model.js";
 import { User } from "../models/User.js";
-import { predict, update } from "../utils/ml.js";
+import { predict } from "../utils/ml.js";
 import { sendText } from "../utils/twilio.js";
 import bcrypt from "bcrypt";
 import { generateAuthToken } from "../models/Restaurant.js";
