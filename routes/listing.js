@@ -237,7 +237,7 @@ router.get("/:rid", async (req, res) => {
       const index = restaurant.waitlist
         .map((userInfo) => userInfo.user.toString())
         .indexOf(listingInfo.buyer.toString());
-      if (!listingInfo.taken && index >= 0) {
+      if (index >= 0) {
         result.push({ ...listingInfo._doc, place: index + 1 });
       }
       if (index < 0) {
