@@ -86,7 +86,7 @@ const send_pay_now_msg = async (phone, name, payout, amount) => {
 };
 
 const MINUTE = 60000;
-const NUMBER = 3;
+const WAIT_BEFORE_REMOVE = 15;
 
 /********************************************************************
  *                        Restaurant Routes                         *
@@ -554,7 +554,7 @@ router.post("/notifyUser", async (req, res) => {
     } else {
       return res.status(400).send("User not in waitlist.");
     }
-    restaurant.waitlist[index].notified = true;
+    restaurant.waitlist[index].notified = Date.now() + WAIT_BEFORE_REMOVE * MINUTE;
     await restaurant.save();
     // Remove user after some time
     setTimeout(async () => {
@@ -568,7 +568,7 @@ router.post("/notifyUser", async (req, res) => {
           return;
         }
         const userInfo = restaurant.waitlist.splice(index, 1)[0];
-        if (userInfo.notified) {
+        if (userInfo.notified && userInfo.notified - Date.now() < MINUTE) {
           restaurant.historyList.unshift({
             user: userInfo.user,
             partySize: userInfo.partySize,
@@ -645,7 +645,7 @@ router.post("/notifyUser", async (req, res) => {
       } catch (error) {
         console.log(error);
       }
-    }, 1 * MINUTE);
+    }, WAIT_BEFORE_REMOVE * MINUTE);
     return res.status(200).send(user);
   } catch (err) {
     console.log(err);
