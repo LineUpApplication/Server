@@ -554,7 +554,8 @@ router.post("/notifyUser", async (req, res) => {
     } else {
       return res.status(400).send("User not in waitlist.");
     }
-    restaurant.waitlist[index].notified = Date.now() + WAIT_BEFORE_REMOVE * MINUTE;
+    restaurant.waitlist[index].notified =
+      Date.now() + WAIT_BEFORE_REMOVE * MINUTE;
     await restaurant.save();
     // Remove user after some time
     setTimeout(async () => {
@@ -798,27 +799,28 @@ router.post("/setTimeEstimateActivated", async (req, res) => {
 });
 
 router.post("/encourage", async (req, res) => {
-  let restaurant = await Restaurant.findOne({ rid: "kaiyuexuan" });
-  await Promise.all(
-    restaurant.waitlist
-      .slice(restaurant.waitlist.length - 4)
-      .map(async (userInfo) => {
-        const user = await User.findById(userInfo.user);
-        const index = restaurant.waitlist
-          .map((userInfo) => userInfo.user.toString())
-          .indexOf(userInfo.user.toString());
-        const estimatedWait = await predict(
-          userInfo.partySize,
-          index + 1,
-          restaurant._id
-        );
-        await sendText(
-          user.phone,
-          `Your current wait time is ${estimatedWait} minutes at ${restaurant.name}. If you’d like to be seated sooner, request to swap positions with a party closer to the front here: https://line-up-usersite.herokuapp.com/${restaurant.rid}/${user._id}/en/requestSwap`
-        );
-      })
-  );
-  return res.status(200).send("done");
+  try {
+    const { rid } = req.body.restaurant;
+    const { _id } = req.body.userInfo;
+    let restaurant = await Restaurant.findOne({ rid: rid });
+    const user = await User.findById(userInfo.user);
+    const index = restaurant.waitlist
+      .map((userInfo) => userInfo.user.toString())
+      .indexOf(_id);
+    const estimatedWait = await predict(
+      userInfo.partySize,
+      index + 1,
+      restaurant._id
+    );
+    await sendText(
+      user.phone,
+      `Your current wait time is ${estimatedWait} minutes at ${restaurant.name}. If you’d like to be seated sooner, request to swap positions with a party closer to the front here: https://line-up-usersite.herokuapp.com/${restaurant.rid}/${user._id}/en/requestSwap`
+    );
+    return res.status(200).send("done");
+  } catch (error) {
+    console.log(error);
+    return res.status(400).send(error);
+  }
 });
 
 router.get("/:rid", async (req, res) => {
