@@ -567,9 +567,8 @@ router.post("/notifyUser", async (req, res) => {
           console.log("User not in waitlist.");
           return;
         }
-        let userInfo = restaurant.waitlist[index];
+        const userInfo = restaurant.waitlist.splice(index, 1)[0];
         if (userInfo.notified) {
-          userInfo = restaurant.waitlist.splice(index, 1)[0];
           restaurant.historyList.unshift({
             user: userInfo.user,
             partySize: userInfo.partySize,
