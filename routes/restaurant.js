@@ -568,73 +568,79 @@ router.post("/notifyUser", async (req, res) => {
           return;
         }
         const userInfo = restaurant.waitlist.splice(index, 1)[0];
-        restaurant.historyList.unshift({
-          user: userInfo.user,
-          partySize: userInfo.partySize,
-          actionType: Actions.Removed,
-          timestamp: Date.now(),
-        });
-        if (restaurant.historyList.length > 20) {
-          restaurant.historyList = restaurant.historyList.slice(0, 20);
-        }
-        await Data.deleteOne({ _id: userInfo.data });
-        user = await User.findById(_id);
-        await send_removed_msg(rid, user.phone, restaurantName);
-        restaurant.removeCount += 1;
-        await restaurant.save();
-        if (index <= 1) {
-          if (restaurant.waitlist.length > 1) {
-            user = await User.findById(restaurant.waitlist[1].user);
-            await send_almost_msg(rid, user.phone, restaurantName);
+        if (userInfo.notified) {
+          restaurant.historyList.unshift({
+            user: userInfo.user,
+            partySize: userInfo.partySize,
+            actionType: Actions.Removed,
+            timestamp: Date.now(),
+          });
+          if (restaurant.historyList.length > 20) {
+            restaurant.historyList = restaurant.historyList.slice(0, 20);
           }
-        }
+          await Data.deleteOne({ _id: userInfo.data });
+          user = await User.findById(_id);
+          await send_removed_msg(rid, user.phone, restaurantName);
+          restaurant.removeCount += 1;
+          await restaurant.save();
+          if (index <= 1) {
+            if (restaurant.waitlist.length > 1) {
+              user = await User.findById(restaurant.waitlist[1].user);
+              await send_almost_msg(rid, user.phone, restaurantName);
+            }
+          }
 
-        // make sure marketplace doesnt affect normal ops
-        try {
-          let i = 0;
-          while (i < restaurant.listings.length) {
-            if (
-              (restaurant.listings[i].taken &&
-                restaurant.listings[i].seller._id === user._id) ||
-              (!restaurant.listings[i].taken &&
-                restaurant.listings[i].buyer._id === user._id)
-            ) {
-              restaurant.listings.splice(i, 1);
-            } else {
-              i++;
+          // make sure marketplace doesnt affect normal ops
+          try {
+            let i = 0;
+            while (i < restaurant.listings.length) {
+              if (
+                (restaurant.listings[i].taken &&
+                  restaurant.listings[i].seller._id === user._id) ||
+                (!restaurant.listings[i].taken &&
+                  restaurant.listings[i].buyer._id === user._id)
+              ) {
+                restaurant.listings.splice(i, 1);
+              } else {
+                i++;
+              }
             }
-          }
-          let result = [];
-          restaurant.listings = restaurant.listings.filter((listingInfo) => {
-            const listingIndex = restaurant.waitlist
-              .map((userInfo) => userInfo.user.toString())
-              .indexOf(listingInfo.buyer.toString());
-            if (!listingInfo.taken && listingIndex >= index + 4) {
-              result.push({ ...listingInfo._doc, place: index + 1 });
-            }
-            if (listingIndex < 0) {
+            let result = [];
+            restaurant.listings = restaurant.listings.filter((listingInfo) => {
               const listingIndex = restaurant.waitlist
                 .map((userInfo) => userInfo.user.toString())
-                .indexOf(listingInfo.seller.toString());
-              return listingIndex >= 0;
-            } else {
-              return true;
+                .indexOf(listingInfo.buyer.toString());
+              if (!listingInfo.taken && listingIndex >= index + 4) {
+                result.push({ ...listingInfo._doc, place: index + 1 });
+              }
+              if (listingIndex < 0) {
+                const listingIndex = restaurant.waitlist
+                  .map((userInfo) => userInfo.user.toString())
+                  .indexOf(listingInfo.seller.toString());
+                return listingIndex >= 0;
+              } else {
+                return true;
+              }
+            });
+            await restaurant.save();
+            if (
+              restaurant.marketplaceActivated &&
+              result.length &&
+              index <= 4
+            ) {
+              if (restaurant.waitlist.length >= 5) {
+                const maxAmount = result.reduce(function (prev, current) {
+                  return prev.price > current.price ? prev : current;
+                }).price;
+                const user = await User.findById(restaurant.waitlist[4].user);
+                await send_encourage_sell(user.phone, rid, user._id, maxAmount);
+                restaurant.encourageCount += 1;
+                await restaurant.save();
+              }
             }
-          });
-          await restaurant.save();
-          if (restaurant.marketplaceActivated && result.length && index <= 4) {
-            if (restaurant.waitlist.length >= 5) {
-              const maxAmount = result.reduce(function (prev, current) {
-                return prev.price > current.price ? prev : current;
-              }).price;
-              const user = await User.findById(restaurant.waitlist[4].user);
-              await send_encourage_sell(user.phone, rid, user._id, maxAmount);
-              restaurant.encourageCount += 1;
-              await restaurant.save();
-            }
+          } catch (error) {
+            console.log(error);
           }
-        } catch (error) {
-          console.log(error);
         }
       } catch (error) {
         console.log(error);

@@ -164,7 +164,8 @@ router.post("/swapPosition", async (req, res) => {
     restaurant.listings[listingIndex].taken = true;
     restaurant.listings[listingIndex].seller = sellerId;
     restaurant.listings[listingIndex].payout = payout;
-
+    restaurant.waitlist[waitlistSellerIndex].notified = false;
+    restaurant.waitlist[waitlistBuyerIndex].notified = false;
     await restaurant.save();
     const buyer = await User.findById(buyerId);
     if (waitlistSellerIndex <= 1) {
