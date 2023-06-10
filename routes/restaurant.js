@@ -225,7 +225,7 @@ router.post("/addUser", async (req, res) => {
       const estimatedWait = await predict(partySize, index + 1, restaurant._id);
       await sendText(
         user.phone,
-        `Your current wait time is ${Math.ceil(estimatedWait)} minutes at ${restaurant.name}. If you’d like to be seated sooner, request to swap positions with a party closer to the front here: https://line-up-usersite.herokuapp.com/${restaurant.rid}/${user._id}/en/requestSwap`
+        `Your current wait time is around ${Math.ceil(estimatedWait)} minutes at ${restaurant.name}. If you’d like to be seated sooner, request to swap positions with a party closer to the front here: https://line-up-usersite.herokuapp.com/${restaurant.rid}/${user._id}/en/requestSwap`
       );
     }
     return res.status(200).send(user);
@@ -822,7 +822,7 @@ router.post("/encourage", async (req, res) => {
         );
         await sendText(
           user.phone,
-          `Your current wait time is ${Math.ceil(estimatedWait)} minutes at ${restaurant.name}. If you’d like to be seated sooner, request to swap positions with a party closer to the front here: https://line-up-usersite.herokuapp.com/${restaurant.rid}/${user._id}/en/requestSwap`
+          `Your current wait time is around ${Math.ceil(estimatedWait)} minutes at ${restaurant.name}. If you’d like to be seated sooner, request to swap positions with a party closer to the front here: https://line-up-usersite.herokuapp.com/${restaurant.rid}/${user._id}/en/requestSwap`
         );
       })
   );
