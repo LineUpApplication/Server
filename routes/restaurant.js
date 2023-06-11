@@ -85,6 +85,18 @@ const send_pay_now_msg = async (phone, name, payout, amount) => {
   );
 };
 
+const send_seller_checked_in = async (
+  phone,
+  restaurantName,
+  payout,
+  amount
+) => {
+  await sendText(
+    phone,
+    `You have just been checked in by ${restaurantName}, you will receive the $${amount} payment via ${payout.type} shortly. Thank you for using LineUp! \nFor questions about LineUp services, message or call +19495655311`
+  );
+};
+
 const MINUTE = 60000;
 const WAIT_BEFORE_REMOVE = 15;
 
@@ -225,7 +237,13 @@ router.post("/addUser", async (req, res) => {
       const estimatedWait = await predict(partySize, index + 1, restaurant._id);
       await sendText(
         user.phone,
-        `Your current wait time is around ${Math.ceil(estimatedWait)} minutes at ${restaurant.name}. If you’d like to be seated sooner, request to swap positions with a party closer to the front here: https://line-up-usersite.herokuapp.com/${restaurant.rid}/${user._id}/en/requestSwap`
+        `Your current wait time is around ${Math.ceil(
+          estimatedWait
+        )} minutes at ${
+          restaurant.name
+        }. If you’d like to be seated sooner, request to swap positions with a party closer to the front here: https://line-up-usersite.herokuapp.com/${
+          restaurant.rid
+        }/${user._id}/en/requestSwap`
       );
     }
     return res.status(200).send({ user: user, place: index + 1 });
@@ -479,9 +497,15 @@ router.post("/checkinUser", async (req, res) => {
             restaurant.listings[i].payout,
             restaurant.listings[i].price
           );
-          await sendPayout(
-            restaurant.listings[i].price,
-            "sb-f2npg25455803@business.example.com" // sandbox account
+          // await sendPayout(
+          //   restaurant.listings[i].price,
+          //   "sb-f2npg25455803@business.example.com" // sandbox account
+          // );
+          await send_seller_checked_in(
+            seller.phone,
+            restaurantName,
+            restaurant.listings[i].payout,
+            restaurant.listings[i].price
           );
           restaurant.listings.splice(i, 1);
         } else if (
