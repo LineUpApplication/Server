@@ -221,13 +221,13 @@ router.post("/addUser", async (req, res) => {
     if (index <= 1) {
       await send_almost_msg(rid, phone, restaurantName);
     }
-    // if (index > 10) {
-    //   const estimatedWait = await predict(partySize, index + 1, restaurant._id);
-    //   await sendText(
-    //     user.phone,
-    //     `Your current wait time is around ${Math.ceil(estimatedWait)} minutes at ${restaurant.name}. If you’d like to be seated sooner, request to swap positions with a party closer to the front here: https://line-up-usersite.herokuapp.com/${restaurant.rid}/${user._id}/en/requestSwap`
-    //   );
-    // }
+    if (index > 10) {
+      const estimatedWait = await predict(partySize, index + 1, restaurant._id);
+      await sendText(
+        user.phone,
+        `Your current wait time is around ${Math.ceil(estimatedWait)} minutes at ${restaurant.name}. If you’d like to be seated sooner, request to swap positions with a party closer to the front here: https://line-up-usersite.herokuapp.com/${restaurant.rid}/${user._id}/en/requestSwap`
+      );
+    }
     return res.status(200).send({ user: user, place: index + 1 });
   } catch (err) {
     console.log("Failed to add user: " + err);
