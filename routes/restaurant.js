@@ -228,7 +228,7 @@ router.post("/addUser", async (req, res) => {
     //     `Your current wait time is around ${Math.ceil(estimatedWait)} minutes at ${restaurant.name}. If you’d like to be seated sooner, request to swap positions with a party closer to the front here: https://line-up-usersite.herokuapp.com/${restaurant.rid}/${user._id}/en/requestSwap`
     //   );
     // }
-    return res.status(200).send(user);
+    return res.status(200).send({ user: user, place: index + 1 });
   } catch (err) {
     console.log("Failed to add user: " + err);
     return res.status(400).send("Failed to add user: " + err);
@@ -822,7 +822,13 @@ router.post("/encourage", async (req, res) => {
         );
         await sendText(
           user.phone,
-          `Your current wait time is around ${Math.ceil(estimatedWait)} minutes at ${restaurant.name}. If you’d like to be seated sooner, request to swap positions with a party closer to the front here: https://line-up-usersite.herokuapp.com/${restaurant.rid}/${user._id}/en/requestSwap`
+          `Your current wait time is around ${Math.ceil(
+            estimatedWait
+          )} minutes at ${
+            restaurant.name
+          }. If you’d like to be seated sooner, request to swap positions with a party closer to the front here: https://line-up-usersite.herokuapp.com/${
+            restaurant.rid
+          }/${user._id}/en/requestSwap`
         );
       })
   );
