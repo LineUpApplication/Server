@@ -601,6 +601,14 @@ router.post("/notifyUser", async (req, res) => {
     }
     restaurant.waitlist[index].notified =
       Date.now() + WAIT_BEFORE_REMOVE * MINUTE;
+    const listingIndex = restaurant.listings
+      .map((listingInfo) => listingInfo.buyer.toString())
+      .indexOf(user._id.toString());
+    if (listingIndex >= 0) {
+      if (!restaurant.listings[listingIndex].taken) {
+        restaurant.listings.splice(listingIndex, 1);
+      }
+    }
     await restaurant.save();
     // Remove user after some time
     setTimeout(async () => {
