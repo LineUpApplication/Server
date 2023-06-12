@@ -98,7 +98,7 @@ const send_seller_checked_in = async (
 };
 
 const MINUTE = 60000;
-const WAIT_BEFORE_REMOVE = 15;
+const WAIT_BEFORE_REMOVE = 10;
 
 /********************************************************************
  *                        Restaurant Routes                         *
