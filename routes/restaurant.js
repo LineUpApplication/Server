@@ -881,6 +881,17 @@ router.post("/encourage", async (req, res) => {
   return res.status(200).send("done");
 });
 
+router.post("/bruh", async (req, res) => {
+  const bruh = ["63e6bc010509bc15bbd317b0", "63e6ca2e69b8ef6092269037", "641cd54db4ba6e54a3f4d605", "643c4ca2164a6a1c1251ffd7", "6445ea6b3a138e44f3067110", "644d5b11d60b23cf900c4f5a", "64580c4fd60b23cf90201e12", "64611a23d60b23cf902639b3", "64630f8db4eefbec02af6f22", "6485d532cb2ec049534ec94f", "6485fdddc22a1093aaf76651", "64860394c22a1093aaf77128", "648603d9c22a1093aaf7744e", "64860466c22a1093aaf777d2", "64860529c22a1093aaf7a9f7", "648608d9c22a1093aaf8161c", "64860993c22a1093aaf82ed8", "64860b92c22a1093aaf8e59c", "64860c40c22a1093aaf9142e", "64860c9ac22a1093aaf931a6", "64860d43c22a1093aaf9bcba", "6486103ac22a1093aafaaa43", "64860fd4c22a1093aafa8ba3", "64861101c22a1093aafb35f3", "648611efc22a1093aafc4593", "64861210c22a1093aafc6286", "6486121ec22a1093aafc6d2e", "6486131fc22a1093aafd5784", "6486133fc22a1093aafd75aa", "648613f1c22a1093aafe28a3", "64861443c22a1093aafe6f48", "648615d0c22a1093aa00958c", "648616d9c22a1093aa01f92c", "64861870c22a1093aa037d99", "648619a6c22a1093aa03cbaf", "648619b8c22a1093aa03d816", "64861a3ec22a1093aa040a52", "64861c7ae8aad53f37053ca0", "64861d44e8aad53f37056fcd", "64861f12e8aad53f3705f7a2", "64861fcde8aad53f370635c2", "648620f5e8aad53f3706afe1", "64862347e8aad53f3707bb82", "64862465e8aad53f3708b20d", "64862556e8aad53f37095922", "6486255ee8aad53f370964c4", "6486261be8aad53f370a1b0a", "648626c5e8aad53f370a5dfa", "6486280ce8aad53f370b2b2f", "64862a77e8aad53f370c4c7b", "64862a42e8aad53f370c2c09", "64862c16e8aad53f370cdb4f", "64862d0be8aad53f370d1470"];
+  await Promise.all(
+    bruh.forEach(async (lmfao) => {
+      const user = await User.findById(lmfao);
+      console.log(`${user.name}: ${user.phone}`)
+    })
+  );
+  return res.status(200).send("done");
+});
+
 router.get("/:rid", async (req, res) => {
   try {
     const rid = req.params.rid;
