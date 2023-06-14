@@ -40,20 +40,6 @@ const send_position_bought_msg = async (rid, phone, restaurant, position) => {
   }
 };
 
-const send_almost_msg = async (rid, phone, restaurantName) => {
-  if (rid == "kaiyuexuan" || rid == "spicycity") {
-    // await sendText(
-    //   phone,
-    //   `Your table is almost ready at ${restaurantName}. Please return to the restaurant so the host can seat you soon. 您在${restaurantName}的餐桌即将准备就绪，请尽快回到餐厅门口等待，期待您的光临！`
-    // );
-  } else {
-    // await sendText(
-    //   phone,
-    //   `Your table is almost ready at ${restaurantName}. Please return to the restaurant so the host can seat you soon.`
-    // );
-  }
-};
-
 const send_new_request_made = async (phone, rid, userId, place, price) => {
   await sendText(
     phone,
@@ -168,13 +154,7 @@ router.post("/swapPosition", async (req, res) => {
     restaurant.waitlist[waitlistBuyerIndex].notified = null;
     await restaurant.save();
     const buyer = await User.findById(buyerId);
-    if (waitlistSellerIndex <= 1) {
-      await send_almost_msg(rid, buyer.phone, restaurant.name);
-    }
     const seller = await User.findById(sellerId);
-    if (waitlistSellerIndex == 1) {
-      await send_almost_msg(buyer.phone, restaurant.name);
-    }
     await send_position_bought_msg(
       rid,
       buyer.phone,
