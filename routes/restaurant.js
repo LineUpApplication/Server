@@ -115,7 +115,7 @@ router.get("/getUserInfo", async (req, res) => {
       partySize: party.partySize,
       partyReady: party.partyReady,
       timestamp: estimatedWait + new Date().getTime(),
-      createdAt: data.createdAt,
+      createdAt: data ? data.createdAt : party.createdAt,
       place: place,
       notified: party.notified,
       });
@@ -188,7 +188,7 @@ router.post("/addUser", async (req, res) => {
       });
     }
     await data.save();
-    await upsertUserInRestaurant(rid, user._id, partySize, data._id);
+    await upsertUserInRestaurant(rid, user, partySize, data);
     await send_init_msg(phone, name, restaurant.name, user._id, rid);
     // wait 3 min and then encourage
     setTimeout(async () => {
@@ -250,7 +250,7 @@ router.post("/insertUser", async (req, res) => {
       createdAt: new Date(),
     });
     await data.save();
-    insertUserInRestaurant(rid, user._id, partySize, data._id, place);
+    insertUserInRestaurant(rid, user, partySize, data, place);
     await send_init_msg(phone, name, restaurant.name, user._id, rid);
     return res.status(200).send(user);
   } catch (err) {

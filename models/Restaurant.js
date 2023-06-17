@@ -18,9 +18,18 @@ const RestaurantSchema = new mongoose.Schema({
         type: mongoose.Schema.Types.ObjectId,
         ref: "User",
       },
+      username: {
+        type: String,
+      },
+      phone: {
+        type: String,
+      },
       data: {
         type: mongoose.Schema.Types.ObjectId,
         ref: "Data",
+      },
+      createdAt: {
+        type: Date,
       },
       partySize: {
         type: Number,

@@ -34,19 +34,22 @@ const findUserInRestaurant = async (rid, userId) => {
   return result[0];
 };
 
-const upsertUserInRestaurant = async (rid, userId, partySize, dataId) => {
+const upsertUserInRestaurant = async (rid, user, partySize, data) => {
   await Restaurant.updateOne(
     {
       rid: rid,
-      waitlist: { $not: { $elemMatch: { user: new ObjectId(userId) } } },
+      waitlist: { $not: { $elemMatch: { user: new ObjectId(user._id) } } },
     },
     {
       $addToSet: {
         waitlist: {
-          user: userId,
+          user: user._id,
+          username: user.name,
+          phone: user.phone,
           partySize: partySize,
           partyReady: false,
-          data: dataId,
+          data: data._id,
+          createdAt: data.createdAt,
         },
       },
     },
@@ -56,13 +59,13 @@ const upsertUserInRestaurant = async (rid, userId, partySize, dataId) => {
   await Restaurant.updateOne(
     {
       rid: rid,
-      "waitlist.user": new ObjectId(userId),
+      "waitlist.user": new ObjectId(user._id),
     },
     {
       $set: {
         "waitlist.$.partySize": partySize,
         "waitlist.$.partyReady": false,
-        "waitlist.$.data": dataId,
+        "waitlist.$.data": data._id,
       },
       $inc: { joinCount: 1 },
     },
@@ -96,9 +99,9 @@ const removeUserInRestaurant = async (rid, userId, partySize) => {
 
 const insertUserInRestaurant = async (
   rid,
-  userId,
+  user,
   partySize,
-  dataId,
+  data,
   place
 ) => {
   await Restaurant.updateOne(
@@ -110,10 +113,13 @@ const insertUserInRestaurant = async (
         waitlist: {
           $each: [
             {
-              user: userId,
+              user: user._id,
+              username: user.name,
+              phone: user.phone,
               partySize: partySize,
               partyReady: false,
-              data: dataId,
+              data: data._id,
+              createdAt: data.createdAt
             },
           ],
           $position: place,
