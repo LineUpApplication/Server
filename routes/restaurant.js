@@ -48,6 +48,13 @@ const send_notify_msg = async (rid, phone, restaurantName) => {
   }
 };
 
+const send_seller_notify_msg = async (rid, phone, restaurantName, price) => {
+  await sendText(
+    phone,
+    `Your table is ready at ${restaurantName}. Please checkin with the host within 5-10 mintues so we can seat you as soon as possible. Remember that you will only recieve the payment of $${price} after you've been checked in by ${restaurantName}!`
+  );
+};
+
 const send_removed_msg = async (rid, phone, restaurantName) => {
   if (rid == "kaiyuexuan" || rid == "spicycity") {
     await sendText(
@@ -118,7 +125,7 @@ router.get("/getUserInfo", async (req, res) => {
       createdAt: data ? data.createdAt : party.createdAt,
       place: place,
       notified: party.notified,
-      });
+    });
   } catch (error) {
     console.log(error);
     return res.status(400).send(error);
@@ -409,7 +416,6 @@ router.post("/checkinUser", async (req, res) => {
     try {
       let i = 0;
       while (i < restaurant.listings.length) {
-        console.log(restaurant.listings[i]);
         if (
           restaurant.listings[i].taken &&
           restaurant.listings[i].seller._id.toString() ===
@@ -506,7 +512,19 @@ router.post("/notifyUser", async (req, res) => {
       .map((userInfo) => userInfo.user.toString())
       .indexOf(user._id.toString());
     if (index > -1) {
-      await send_notify_msg(rid, user.phone, restaurantName);
+      const listingIndex = restaurant.listings
+        .map((listingInfo) => listingInfo.seller.toString())
+        .indexOf(user._id.toString());
+      if (listingIndex >= 0) {
+        send_seller_notify_msg(
+          rid,
+          user.phone,
+          restaurantName,
+          restaurant.listings[listingIndex].price
+        );
+      } else {
+        await send_notify_msg(rid, user.phone, restaurantName);
+      }
     } else {
       return res.status(400).send("User not in waitlist.");
     }
