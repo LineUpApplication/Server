@@ -513,7 +513,9 @@ router.post("/notifyUser", async (req, res) => {
       .indexOf(user._id.toString());
     if (index > -1) {
       const listingIndex = restaurant.listings
-        .map((listingInfo) => listingInfo.seller.toString())
+        .map((listingInfo) =>
+          listingInfo.seller ? listingInfo.seller.toString() : ""
+        )
         .indexOf(user._id.toString());
       if (listingIndex >= 0) {
         send_seller_notify_msg(
