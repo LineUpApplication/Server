@@ -51,7 +51,7 @@ const send_notify_msg = async (rid, phone, restaurantName) => {
 const send_seller_notify_msg = async (rid, phone, restaurantName, price) => {
   await sendText(
     phone,
-    `Your table is ready at ${restaurantName}. Please checkin with the host within 5-10 mintues so we can seat you as soon as possible. Remember that you will only recieve the payment of $${price} after you've been checked in by ${restaurantName}! The payment will be sent to you latest by 11:59PM today. \nFor questions about LineUp services, message or call +19495655311`
+    `Your table is ready at ${restaurantName}. Please checkin with the host within 5-10 mintues so we can seat you as soon as possible. Remember that you will only recieve the payment of $${price} after you've been checked in by ${restaurantName}! \nFor questions about LineUp services, message or call +19495655311`
   );
 };
 
@@ -91,7 +91,7 @@ const send_seller_checked_in = async (
 ) => {
   await sendText(
     phone,
-    `You have just been checked in by ${restaurantName}, you will receive the $${amount} payment via ${payout.type} latest today by 11:59PM. Thank you for using LineUp! \nFor questions about LineUp services, message or call +19495655311`
+    `You have just been checked in by ${restaurantName}, you will receive the $${amount} payment via ${payout.type} shortly. Thank you for using LineUp! \nFor questions about LineUp services, message or call +19495655311`
   );
 };
 
