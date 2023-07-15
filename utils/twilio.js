@@ -14,10 +14,11 @@ const sendText = async (to, body) => {
       from: "+16304071061",
       to: to,
     });
+    return true
   } catch (err) {
     console.log(err);
+    return false
   }
-  return;
 };
 
 export { sendText };

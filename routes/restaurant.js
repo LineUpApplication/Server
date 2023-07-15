@@ -17,16 +17,22 @@ import {
 
 const router = express.Router();
 const send_init_msg = async (phone, name, restaurantName, userId, rid) => {
+  let sent = true;
   if (rid == "kaiyuexuan" || rid == "spicycity") {
-    await sendText(
-      phone,
-      `您好，${name}! 您已成功加入${restaurantName}的等候名单。点此查看您的位置或通知餐厅party是否到齐 https://line-up-usersite.herokuapp.com/${rid}/${userId}/cn`
-    );
+    sent =
+      sent &&
+      (await sendText(
+        phone,
+        `您好，${name}! 您已成功加入${restaurantName}的等候名单。点此查看您的位置或通知餐厅party是否到齐 https://line-up-usersite.herokuapp.com/${rid}/${userId}/cn`
+      ));
   }
-  await sendText(
-    phone,
-    `Hello, ${name}! This is a confirmation of your place in line at ${restaurantName}. Check your waitlist status or notify restaurant about your party status at https://line-up-usersite.herokuapp.com/${rid}/${userId}/en`
-  );
+  sent =
+    sent &&
+    (await sendText(
+      phone,
+      `Hello, ${name}! This is a confirmation of your place in line at ${restaurantName}. Check your waitlist status or notify restaurant about your party status at https://line-up-usersite.herokuapp.com/${rid}/${userId}/en`
+    ));
+  return sent;
 };
 
 const send_notify_msg = async (rid, phone, restaurantName) => {
@@ -181,6 +187,16 @@ router.post("/addUser", async (req, res) => {
     const restaurant = await findUserInRestaurant(rid, user._id);
     const party = restaurant.waitlist[0];
     const index = restaurant.matchedIndex;
+    const validPhone = await send_init_msg(
+      phone,
+      name,
+      restaurant.name,
+      user._id,
+      rid
+    );
+    if (!validPhone) {
+      return res.status(401).send("Invalid phone number.");
+    }
     let data;
     if (index > -1) {
       data = await Data.findById(party.data);
@@ -196,7 +212,6 @@ router.post("/addUser", async (req, res) => {
     }
     await data.save();
     await upsertUserInRestaurant(rid, user, partySize, data);
-    await send_init_msg(phone, name, restaurant.name, user._id, rid);
     // wait 3 min and then encourage
     setTimeout(async () => {
       try {
