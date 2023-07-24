@@ -539,7 +539,7 @@ router.post("/notifyUser", async (req, res) => {
         )
         .indexOf(user._id.toString());
       if (listingIndex >= 0) {
-        send_seller_notify_msg(
+        await send_seller_notify_msg(
           rid,
           user.phone,
           restaurantName,
