@@ -212,33 +212,39 @@ router.post("/addUser", async (req, res) => {
     }
     await data.save();
     await upsertUserInRestaurant(rid, user, partySize, data);
-    // wait 3 min and then encourage
-    setTimeout(async () => {
-      try {
-        const restaurant = await findUserInRestaurant(rid, user._id);
-        const party = restaurant.waitlist[0];
-        const place = restaurant.matchedIndex + 1;
-        if (place > 10) {
-          const estimatedWait = await predict(
-            party.partySize,
-            place,
-            restaurant._id
-          );
-          await sendText(
-            user.phone,
-            `Your current wait time is around ${Math.ceil(
-              estimatedWait
-            )} minutes at ${
-              restaurant.name
-            }. If you’d like to be seated sooner, request to swap positions with a party closer to the front here: https://line-up-usersite.herokuapp.com/${rid}/${
-              user._id
-            }/en/requestSwap`
-          );
+    const checkMarketplace = await Restaurant.findOne(
+      { rid: rid },
+      { marketplaceActivated: 1 }
+    );
+    if (checkMarketplace.marketplaceActivated) {
+      // wait 3 min and then encourage
+      setTimeout(async () => {
+        try {
+          const restaurant = await findUserInRestaurant(rid, user._id);
+          const party = restaurant.waitlist[0];
+          const place = restaurant.matchedIndex + 1;
+          if (place > 10) {
+            const estimatedWait = await predict(
+              party.partySize,
+              place,
+              restaurant._id
+            );
+            await sendText(
+              user.phone,
+              `Your current wait time is around ${Math.ceil(
+                estimatedWait
+              )} minutes at ${
+                restaurant.name
+              }. If you’d like to be seated sooner, request to swap positions with a party closer to the front here: https://line-up-usersite.herokuapp.com/${rid}/${
+                user._id
+              }/en/requestSwap`
+            );
+          }
+        } catch (error) {
+          console.log(error);
         }
-      } catch (error) {
-        console.log(error);
-      }
-    }, 3 * MINUTE);
+      }, 3 * MINUTE);
+    }
     return res.status(200).send({ user: user, place: index + 1 });
   } catch (err) {
     console.log("Failed to add user: " + err);
